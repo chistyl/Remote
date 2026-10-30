@@ -88,12 +88,6 @@ jobs:
           print("Added Settings tab and seven-language preference screen.")
           PY
 
-      - name: Apply core seven-language UI resources
-        run: python3 patches/ApplyCoreLocalization.py
-
-      - name: Apply extended seven-language screens
-        run: python3 patches/ApplyExtendedLocalization.py
-
       - name: Apply language selection context
         run: python3 patches/ApplyLanguageContext.py
 
@@ -150,6 +144,12 @@ jobs:
               gradle_file.write_text(gradle_text, encoding="utf-8")
           print("Added Android packaging exclusion for duplicate Bouncy Castle OSGI manifest.")
           PY
+
+      - name: Apply core seven-language UI resources
+        run: python3 patches/ApplyCoreLocalization.py
+
+      - name: Apply extended seven-language screens
+        run: python3 patches/ApplyExtendedLocalization.py
 
       - name: Print transformed MainActivity context
         working-directory: GoogleTVRemote
