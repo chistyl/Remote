@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_remote">Điều khiển</string>
+    <string name="nav_keyboard">Bàn phím</string>
+    <string name="nav_devices">Thiết bị</string>
+    <string name="smart_remote">Điều khiển thông minh</string>
+    <string name="tv_disconnected">Chưa kết nối TV</string>
+    <string name="paired_reconnect">Đã ghép đôi; hãy kết nối lại</string>
+    <string name="manage">Quản lý</string>
+    <string name="back">Quay lại</string>
+    <string name="home">Trang chủ</string>
+    <string name="recent">Gần đây</string>
+    <string name="mute">Tắt tiếng</string>
+    <string name="play_pause">Phát / Tạm dừng</string>
+    <string name="menu">Menu</string>
+    <string name="power">Nguồn</string>
+    <string name="touchpad_hint">Bàn di chuột / Vuốt để di chuyển, chạm để chọn</string>
+    <string name="searching_tv">Đang tìm Google TV trên Wi-Fi này…</string>
+    <string name="search_tv_hint">Tìm TV hoặc nhập địa chỉ IP</string>
+</resources>
