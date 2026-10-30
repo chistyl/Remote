@@ -145,3 +145,71 @@ for old, new in more_replacements.items():
     if old not in s: print("WARN missing static label:", old)
     else: s = s.replace(old, new)
 p.write_text(s, encoding="utf-8")
+
+# Runtime connection and pairing notices: these change while the app is in use.
+runtime = {
+"status_not_connected":["尚未連線","尚未连接","Not connected","未接続","연결되지 않음","ยังไม่ได้เชื่อมต่อ","Chưa kết nối"],
+"status_paired_device":"已配對：%1$s|已配对：%1$s|Paired: %1$s|ペア設定済み：%1$s|페어링됨: %1$s|จับคู่แล้ว: %1$s|Đã ghép đôi: %1$s".split("|"),
+"status_tv_disconnected":["未連接電視","未连接电视","TV not connected","テレビ未接続","TV 연결 안 됨","ไม่ได้เชื่อมต่อทีวี","TV chưa kết nối"],
+"status_remote_secure":["Remote v2 安全連線中","Remote v2 安全连接中","Remote v2 secure connection active","Remote v2 セキュア接続中","Remote v2 보안 연결 중","กำลังเชื่อมต่ออย่างปลอดภัยด้วย Remote v2","Đang kết nối bảo mật Remote v2"],
+"status_sent":"已傳送：%1$s|已发送：%1$s|Sent: %1$s|送信済み：%1$s|전송됨: %1$s|ส่งแล้ว: %1$s|Đã gửi: %1$s".split("|"),
+"status_remote_failed":"遙控失敗：%1$s|遥控失败：%1$s|Remote command failed: %1$s|リモート操作に失敗：%1$s|리모컨 명령 실패: %1$s|คำสั่งรีโมทล้มเหลว: %1$s|Lệnh điều khiển thất bại: %1$s".split("|"),
+"status_connection_lost":["連線中斷","连接中断","Connection lost","接続が切断されました","연결 끊김","การเชื่อมต่อขาดหาย","Mất kết nối"],
+"status_text_sent":["已透過電視 IME 傳送文字","已通过电视 IME 发送文字","Text sent through the TV IME","テレビのIME経由でテキストを送信しました","TV IME를 통해 텍스트 전송됨","ส่งข้อความผ่าน IME ของทีวีแล้ว","Đã gửi văn bản qua IME của TV"],
+"status_text_failed":"文字傳送失敗：%1$s|文字发送失败：%1$s|Text send failed: %1$s|テキスト送信失敗：%1$s|텍스트 전송 실패: %1$s|ส่งข้อความไม่สำเร็จ: %1$s|Gửi văn bản thất bại: %1$s".split("|"),
+"status_searching_tv":["正在搜尋同一個 Wi-Fi 網路中的 Google TV…","正在搜索同一 Wi-Fi 网络中的 Google TV…","Searching for Google TV on this Wi-Fi network…","同じ Wi-Fi ネットワーク上の Google TV を検索中…","같은 Wi-Fi 네트워크에서 Google TV 검색 중…","กำลังค้นหา Google TV ในเครือข่าย Wi-Fi นี้…","Đang tìm Google TV trên mạng Wi-Fi này…"],
+"status_selected_device":"已選取 %1$s（%2$s），可以開始配對|已选择 %1$s（%2$s），可以开始配对|Selected %1$s (%2$s). Ready to pair.|%1$s（%2$s）を選択しました。ペア設定できます。|%1$s(%2$s) 선택됨. 페어링할 수 있습니다.|เลือก %1$s (%2$s) แล้ว พร้อมจับคู่|Đã chọn %1$s (%2$s). Có thể ghép đôi.".split("|"),
+"status_saved_pairing":["正在使用已保存的配對憑證連線…","正在使用已保存的配对凭据连接…","Connecting with saved pairing credentials…","保存済みのペア設定情報で接続中…","저장된 페어링 정보로 연결 중…","กำลังเชื่อมต่อด้วยข้อมูลจับคู่ที่บันทึกไว้…","Đang kết nối bằng thông tin ghép đôi đã lưu…"],
+"status_reconnected":"已重新連線：%1$s|已重新连接：%1$s|Reconnected: %1$s|再接続しました：%1$s|다시 연결됨: %1$s|เชื่อมต่ออีกครั้งแล้ว: %1$s|Đã kết nối lại: %1$s".split("|"),
+"status_tv_interrupted":"電視連線中斷：%1$s|电视连接中断：%1$s|TV connection interrupted: %1$s|テレビ接続が中断されました：%1$s|TV 연결 중단: %1$s|การเชื่อมต่อทีวีขาดหาย: %1$s|Kết nối TV bị gián đoạn: %1$s".split("|"),
+"status_reconnect_failed":"重新連線失敗：%1$s|重新连接失败：%1$s|Reconnect failed: %1$s|再接続に失敗：%1$s|다시 연결 실패: %1$s|เชื่อมต่ออีกครั้งไม่สำเร็จ: %1$s|Kết nối lại thất bại: %1$s".split("|"),
+"status_pairing_connect":["正在建立安全配對連線…","正在建立安全配对连接…","Establishing secure pairing connection…","セキュアなペア設定接続を確立中…","보안 페어링 연결 설정 중…","กำลังสร้างการเชื่อมต่อจับคู่ที่ปลอดภัย…","Đang thiết lập kết nối ghép đôi bảo mật…"],
+"status_pairing_failed":"配對連線失敗：%1$s|配对连接失败：%1$s|Pairing connection failed: %1$s|ペア設定接続に失敗：%1$s|페어링 연결 실패: %1$s|การเชื่อมต่อจับคู่ล้มเหลว: %1$s|Kết nối ghép đôi thất bại: %1$s".split("|"),
+"status_check_ip_wifi":["請確認 IP 與 Wi-Fi","请确认 IP 和 Wi-Fi","Check the IP address and Wi-Fi","IPアドレスとWi-Fiを確認してください","IP 주소와 Wi-Fi를 확인하세요","โปรดตรวจสอบ IP และ Wi-Fi","Vui lòng kiểm tra IP và Wi-Fi"],
+"status_verifying_pin":["正在驗證配對碼…","正在验证配对码…","Verifying pairing code…","ペアコードを確認中…","페어링 코드 확인 중…","กำลังตรวจสอบรหัสจับคู่…","Đang xác minh mã ghép đôi…"],
+"status_pairing_success":["配對成功，正在啟動遙控通道…","配对成功，正在启动遥控通道…","Pairing successful. Starting remote channel…","ペア設定成功。リモートチャネルを起動中…","페어링 성공. 리모컨 채널 시작 중…","จับคู่สำเร็จ กำลังเริ่มช่องทางรีโมท…","Ghép đôi thành công. Đang khởi động kênh điều khiển…"],
+"status_remote_connected":["Remote v2 已連線","Remote v2 已连接","Remote v2 connected","Remote v2 接続済み","Remote v2 연결됨","เชื่อมต่อ Remote v2 แล้ว","Remote v2 đã kết nối"],
+"status_pairing_error":"配對失敗：%1$s|配对失败：%1$s|Pairing failed: %1$s|ペア設定に失敗：%1$s|페어링 실패: %1$s|จับคู่ล้มเหลว: %1$s|Ghép đôi thất bại: %1$s".split("|"),
+"status_repair_hint":["請重新配對","请重新配对","Please pair again","再度ペア設定してください","다시 페어링하세요","โปรดจับคู่ใหม่อีกครั้ง","Vui lòng ghép đôi lại"],
+"status_pair_code_hint":["請重新確認驗證碼","请重新确认验证码","Check the pairing code again","ペアコードをもう一度確認してください","페어링 코드를 다시 확인하세요","โปรดตรวจสอบรหัสจับคู่อีกครั้ง","Vui lòng kiểm tra lại mã ghép đôi"]
+}
+for idx, folder in enumerate(folders):
+    path = root / folder / "strings.xml"
+    tree = ET.parse(path); res = tree.getroot()
+    existing = {e.attrib.get("name") for e in res.findall("string")}
+    for key, translations in runtime.items():
+        if key not in existing:
+            node = ET.SubElement(res, "string", {"name": key}); node.text = translations[idx]
+    ET.indent(tree, space="    "); tree.write(path, encoding="utf-8", xml_declaration=True)
+    import shutil
+    target = Path("GoogleTVRemote/app/src/main/res") / folder
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copy(path, target / "strings.xml")
+
+p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
+s = p.read_text(encoding="utf-8")
+runtime_replacements = {
+'var deviceName by remember { mutableStateOf("尚未連線") }':'var deviceName by remember { mutableStateOf(context.getString(R.string.status_not_connected)) }',
+'else if (paired) "已配對：$deviceName" else "未連接電視"':'else if (paired) context.getString(R.string.status_paired_device, deviceName) else context.getString(R.string.status_tv_disconnected)',
+'if (connected) "Remote v2 安全連線中"':'if (connected) context.getString(R.string.status_remote_secure)',
+'notice = "已傳送：$command"':'notice = context.getString(R.string.status_sent, command)',
+'notice = "遙控失敗：${e.localizedMessage ?: "連線中斷"}"':'notice = context.getString(R.string.status_remote_failed, e.localizedMessage ?: context.getString(R.string.status_connection_lost))',
+'notice = "已透過電視 IME 傳送文字"':'notice = context.getString(R.string.status_text_sent)',
+'notice = "文字傳送失敗：${e.localizedMessage ?: "連線中斷"}"':'notice = context.getString(R.string.status_text_failed, e.localizedMessage ?: context.getString(R.string.status_connection_lost))',
+'notice = "正在搜尋同一個 Wi-Fi 網路中的 Google TV…"':'notice = context.getString(R.string.status_searching_tv)',
+'notice = "已選取 ${device.name}（${device.host}），可以開始配對"':'notice = context.getString(R.string.status_selected_device, device.name, device.host)',
+'notice = "正在使用已保存的配對憑證連線…"':'notice = context.getString(R.string.status_saved_pairing)',
+'notice = "已重新連線：${saved.name}"':'notice = context.getString(R.string.status_reconnected, saved.name)',
+'notice = "電視連線中斷：$reason"':'notice = context.getString(R.string.status_tv_interrupted, reason)',
+'notice = "重新連線失敗：${e.localizedMessage ?: "請重新配對"}"':'notice = context.getString(R.string.status_reconnect_failed, e.localizedMessage ?: context.getString(R.string.status_repair_hint))',
+'notice = "正在建立安全配對連線…"':'notice = context.getString(R.string.status_pairing_connect)',
+'notice = "配對連線失敗：${e.localizedMessage ?: "請確認 IP 與 Wi-Fi"}"':'notice = context.getString(R.string.status_pairing_failed, e.localizedMessage ?: context.getString(R.string.status_check_ip_wifi))',
+'notice = "正在驗證配對碼…"':'notice = context.getString(R.string.status_verifying_pin)',
+'notice = "配對成功，正在啟動遙控通道…"':'notice = context.getString(R.string.status_pairing_success)',
+'notice = "Remote v2 已連線"':'notice = context.getString(R.string.status_remote_connected)',
+'notice = "配對失敗：${e.localizedMessage ?: "請重新確認驗證碼"}"':'notice = context.getString(R.string.status_pairing_error, e.localizedMessage ?: context.getString(R.string.status_pair_code_hint))'
+}
+for old, new in runtime_replacements.items():
+    if old not in s: print("WARN runtime notice not found:", old)
+    else: s = s.replace(old, new)
+p.write_text(s, encoding="utf-8")
