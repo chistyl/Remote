@@ -213,3 +213,78 @@ for old, new in runtime_replacements.items():
     if old not in s: print("WARN runtime notice not found:", old)
     else: s = s.replace(old, new)
 p.write_text(s, encoding="utf-8")
+
+# Second-pass exact replacements based on the extracted Compose source.
+p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
+s = p.read_text(encoding="utf-8")
+exact_replacements = {
+    'label = { Text("遙控器") }': 'label = { Text(stringResource(R.string.nav_remote)) }',
+    'label = { Text("鍵盤") }': 'label = { Text(stringResource(R.string.nav_keyboard)) }',
+    'label = { Text("設備") }': 'label = { Text(stringResource(R.string.nav_devices)) }',
+    'Text("智慧遙控器", color = Color.White': 'Text(stringResource(R.string.tv_remote_title), color = Color.White',
+    'Text("管理", color = Accent)': 'Text(stringResource(R.string.manage), color = Accent)',
+    'Text("LOCAL NETWORK  •  NO CLOUD ACCOUNT", color = Color(0xFF596575)': 'Text(stringResource(R.string.local_network_privacy), color = Color(0xFF596575)',
+    'Text("DIRECTION CONTROL", color = Muted': 'Text(stringResource(R.string.direction_control), color = Muted',
+    'Text("觸控板  /  滑動移動焦點，點擊確認", color = Muted': 'Text(stringResource(R.string.touchpad_title), color = Muted',
+    'ActionTile("返回",': 'ActionTile(stringResource(R.string.back),',
+    'ActionTile("首頁",': 'ActionTile(stringResource(R.string.home),',
+    'ActionTile("最近使用",': 'ActionTile(stringResource(R.string.recent),',
+    'ActionTile("音量 −",': 'ActionTile(stringResource(R.string.volume_down),',
+    'ActionTile("靜音",': 'ActionTile(stringResource(R.string.mute),',
+    'ActionTile("音量 +",': 'ActionTile(stringResource(R.string.volume_up),',
+    'Text("觸控操作區", color = Color.White': 'Text(stringResource(R.string.touch_area), color = Color.White',
+    'Text("滑動切換方向・點擊 OK", color = Muted': 'Text(stringResource(R.string.swipe_tap_ok), color = Muted',
+    'Text("HDMI 輸入快捷鍵（依電視支援）", color = Muted': 'Text(stringResource(R.string.hdmi_shortcuts), color = Muted',
+    'Text("提示：HDMI 快捷鍵及電源鍵是否有效，取決於電視韌體；觸控板以方向鍵事件模擬焦點移動。", color = Muted': 'Text(stringResource(R.string.hdmi_note), color = Muted',
+    'Text("PHONE KEYBOARD", color = Muted': 'Text(stringResource(R.string.phone_keyboard), color = Muted',
+    'if (text.isEmpty()) Text("輸入要在電視搜尋的文字…", color = Muted)': 'if (text.isEmpty()) Text(stringResource(R.string.keyboard_placeholder), color = Muted)',
+    'Text("使用手機原生鍵盤輸入，將文字傳送至電視目前焦點欄位。", color = Muted': 'Text(stringResource(R.string.keyboard_help), color = Muted',
+    'Text("DEVICE CONNECTION", color = Muted': 'Text(stringResource(R.string.device_connection), color = Muted',
+    'Text("搜尋附近的 Google TV", color = Color.White': 'Text(stringResource(R.string.search_nearby), color = Color.White',
+    'Text("透過同一個 Wi-Fi 網路探索設備", color = Muted': 'Text(stringResource(R.string.same_wifi), color = Muted',
+    'Text(if (searching) "搜尋中…" else "搜尋", color = Accent)': 'Text(if (searching) stringResource(R.string.searching) else stringResource(R.string.search), color = Accent)',
+    'Text("已配對設備（${savedDevices.size}）", color = Color.White': 'Text(stringResource(R.string.paired_devices_count, savedDevices.size), color = Color.White',
+    'Text("搜尋到的設備（${devices.size}）", color = Color.White': 'Text(stringResource(R.string.found_devices_count, devices.size), color = Color.White',
+    'Text("重新連線", color = Accent': 'Text(stringResource(R.string.reconnect), color = Accent',
+    'Text("正在探索區域網路…", color = Muted': 'Text(stringResource(R.string.exploring_lan), color = Muted',
+    'Text("手動輸入 IP 位址", color = Color.White': 'Text(stringResource(R.string.manual_ip), color = Color.White',
+    'placeholder = { Text("例如 192.168.1.100") }': 'placeholder = { Text(stringResource(R.string.example_ip)) }',
+    '{ Text("開始配對", fontWeight = FontWeight.Bold) }': '{ Text(stringResource(R.string.start_pairing), fontWeight = FontWeight.Bold) }',
+    'Text("輸入電視顯示的 6 位數十六進位驗證碼", color = Color.White': 'Text(stringResource(R.string.pairing_code), color = Color.White',
+    'placeholder = { Text("例如 A1B2C3") }': 'placeholder = { Text(stringResource(R.string.example_pin)) }',
+    '{ Text("確認配對", fontWeight = FontWeight.Bold) }': '{ Text(stringResource(R.string.confirm_pairing), fontWeight = FontWeight.Bold) }',
+    'Text("首次配對時，請依電視畫面顯示的驗證碼完成授權。憑證會保存在手機 App 私有空間。", color = Muted': 'Text(stringResource(R.string.pairing_help), color = Muted'
+}
+for old, new in exact_replacements.items():
+    if old in s:
+        s = s.replace(old, new)
+    else:
+        print("WARN exact pass not found:", old)
+runtime_exact = {
+    'var deviceName by remember { mutableStateOf("尚未連線") }': 'var deviceName by remember { mutableStateOf(context.getString(R.string.status_not_connected)) }',
+    'var notice by remember { mutableStateOf("請先搜尋或輸入電視 IP 位址") }': 'var notice by remember { mutableStateOf(context.getString(R.string.search_tv_hint)) }',
+    'Text(if (connected) deviceName else if (paired) "已配對：$deviceName" else "未連接電視",': 'Text(if (connected) deviceName else if (paired) context.getString(R.string.status_paired_device, deviceName) else context.getString(R.string.status_tv_disconnected),',
+    'Text(if (connected) "Remote v2 安全連線中" else if (paired) "已配對；請重新連線" else notice,': 'Text(if (connected) context.getString(R.string.status_remote_secure) else if (paired) context.getString(R.string.paired_reconnect) else notice,',
+    'notice = "正在搜尋同一個 Wi-Fi 網路中的 Google TV…"; discovery.start()': 'notice = context.getString(R.string.status_searching_tv); discovery.start()',
+    'notice = "已選取 ${device.name}（${device.host}），可以開始配對"': 'notice = context.getString(R.string.status_selected_device, device.name, device.host)',
+    'notice = "已傳送：$command"': 'notice = context.getString(R.string.status_sent, command)',
+    'notice = "遙控失敗：${e.localizedMessage ?: "連線中斷"}"': 'notice = context.getString(R.string.status_remote_failed, e.localizedMessage ?: context.getString(R.string.status_connection_lost))',
+    'notice = "已透過電視 IME 傳送文字"': 'notice = context.getString(R.string.status_text_sent)',
+    'notice = "文字傳送失敗：${e.localizedMessage ?: "連線中斷"}"': 'notice = context.getString(R.string.status_text_failed, e.localizedMessage ?: context.getString(R.string.status_connection_lost))',
+    'notice = "正在使用已保存的配對憑證連線…"': 'notice = context.getString(R.string.status_saved_pairing)',
+    'notice = "已重新連線：${saved.name}"': 'notice = context.getString(R.string.status_reconnected, saved.name)',
+    'notice = "電視連線中斷：$reason"': 'notice = context.getString(R.string.status_tv_interrupted, reason)',
+    'notice = "重新連線失敗：${e.localizedMessage ?: "請重新配對"}"': 'notice = context.getString(R.string.status_reconnect_failed, e.localizedMessage ?: context.getString(R.string.status_repair_hint))',
+    'notice = "正在建立安全配對連線…"': 'notice = context.getString(R.string.status_pairing_connect)',
+    'notice = "配對連線失敗：${e.localizedMessage ?: "請確認 IP 與 Wi-Fi"}"': 'notice = context.getString(R.string.status_pairing_failed, e.localizedMessage ?: context.getString(R.string.status_check_ip_wifi))',
+    'notice = "正在驗證配對碼…"': 'notice = context.getString(R.string.status_verifying_pin)',
+    'notice = "配對成功，正在啟動遙控通道…"': 'notice = context.getString(R.string.status_pairing_success)',
+    'notice = "Remote v2 已連線"': 'notice = context.getString(R.string.status_remote_connected)',
+    'notice = "配對失敗：${e.localizedMessage ?: "請重新確認驗證碼"}"': 'notice = context.getString(R.string.status_pairing_error, e.localizedMessage ?: context.getString(R.string.status_pair_code_hint))'
+}
+for old, new in runtime_exact.items():
+    if old in s:
+        s = s.replace(old, new)
+    else:
+        print("WARN runtime exact pass not found:", old)
+p.write_text(s, encoding="utf-8")
