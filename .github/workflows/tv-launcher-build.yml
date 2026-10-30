@@ -4,7 +4,7 @@ on:
   push:
     branches: ["tv-launcher-build"]
     paths:
-      - "TVLauncher-Source-v1.9.zip"
+      - "TVLauncher-Source-v2.0.zip"
       - ".github/workflows/tv-launcher-build.yml"
   workflow_dispatch:
 
@@ -40,9 +40,9 @@ jobs:
 
       - name: Extract TV Launcher source
         run: |
-          test -s TVLauncher-Source-v1.9.zip
-          unzip -t TVLauncher-Source-v1.9.zip
-          unzip -q TVLauncher-Source-v1.9.zip -d extracted
+          test -s TVLauncher-Source-v2.0.zip
+          unzip -t TVLauncher-Source-v2.0.zip
+          unzip -q TVLauncher-Source-v2.0.zip -d extracted
           PROJECT_DIR="$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n 1)"
           test -n "$PROJECT_DIR"
           test -f "$PROJECT_DIR/settings.gradle"
@@ -63,7 +63,7 @@ jobs:
       - name: Upload installable Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: TVLauncher-debug-v1.9
+          name: TVLauncher-debug-v2.0
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -71,7 +71,7 @@ jobs:
       - name: Upload Release APK (unsigned)
         uses: actions/upload-artifact@v4
         with:
-          name: TVLauncher-release-unsigned-v1.9
+          name: TVLauncher-release-unsigned-v2.0
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 30
