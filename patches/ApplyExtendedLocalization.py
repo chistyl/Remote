@@ -64,3 +64,36 @@ for old,new in replacements.items():
     else: s=s.replace(old,new)
 p.write_text(s,encoding="utf-8")
 print("Localized remote, keyboard, discovery and pairing screens in seven languages.")
+
+# Add language settings copy and translations; resources must be copied AFTER adding new keys.
+settings_items = {
+    "settings_language_title": ["語言 / LANGUAGE", "语言 / LANGUAGE", "LANGUAGE", "言語 / LANGUAGE", "언어 / LANGUAGE", "ภาษา / LANGUAGE", "NGÔN NGỮ / LANGUAGE"],
+    "settings_language_desc": ["選擇 App 顯示語言；預設跟隨手機系統語言。", "选择 App 显示语言；默认跟随手机系统语言。", "Choose the app language. By default, it follows your device language.", "アプリの表示言語を選択します。既定では端末の言語に従います。", "앱 표시 언어를 선택하세요. 기본값은 기기 언어를 따릅니다.", "เลือกภาษาของแอป โดยค่าเริ่มต้นจะใช้ภาษาของอุปกรณ์", "Chọn ngôn ngữ ứng dụng. Mặc định theo ngôn ngữ thiết bị."],
+    "settings_language_label": ["介面語言", "界面语言", "App language", "アプリの言語", "앱 언어", "ภาษาแอป", "Ngôn ngữ ứng dụng"],
+    "follow_system": ["跟隨系統語言", "跟随系统语言", "Follow system", "システム設定に従う", "시스템 설정 따르기", "ตามภาษาระบบ", "Theo hệ thống"]
+}
+for idx, folder in enumerate(folders):
+    path = root / folder / "strings.xml"
+    tree = ET.parse(path); res = tree.getroot()
+    existing = {e.attrib.get("name") for e in res.findall("string")}
+    for key, translations in settings_items.items():
+        if key not in existing:
+            node = ET.SubElement(res, "string", {"name": key}); node.text = translations[idx]
+    ET.indent(tree, space="    "); tree.write(path, encoding="utf-8", xml_declaration=True)
+    target = Path("GoogleTVRemote/app/src/main/res") / folder
+    target.mkdir(parents=True, exist_ok=True)
+    import shutil
+    shutil.copy(path, target / "strings.xml")
+
+# Localize the language settings screen itself.
+settings = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/AppLanguageSettings.kt")
+if settings.exists():
+    t = settings.read_text(encoding="utf-8")
+    if "import androidx.compose.ui.res.stringResource" not in t:
+        t = t.replace("import androidx.compose.ui.platform.LocalContext", "import androidx.compose.ui.platform.LocalContext\nimport androidx.compose.ui.res.stringResource")
+    t = t.replace('Choice(null, "跟隨系統語言")', 'Choice(null, "Follow system")')
+    t = t.replace('?: "跟隨系統語言"', '?: context.getString(R.string.follow_system)')
+    t = t.replace('Text("語言 / LANGUAGE", fontSize = 12.sp)', 'Text(stringResource(R.string.settings_language_title), fontSize = 12.sp)')
+    t = t.replace('Text("選擇 App 顯示語言；預設跟隨手機系統語言。", fontSize = 14.sp)', 'Text(stringResource(R.string.settings_language_desc), fontSize = 14.sp)')
+    t = t.replace('label = { Text("介面語言") }', 'label = { Text(stringResource(R.string.settings_language_label)) }')
+    settings.write_text(t, encoding="utf-8")
