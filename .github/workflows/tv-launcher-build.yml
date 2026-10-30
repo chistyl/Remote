@@ -1,0 +1,74 @@
+name: TV Launcher APK Build
+
+on:
+  push:
+    branches: ["tv-launcher-build"]
+    paths:
+      - "TVLauncher-Source-v1.9.zip"
+      - ".github/workflows/tv-launcher-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build TV Launcher APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Extract TV Launcher source
+        run: |
+          test -f TVLauncher-Source-v1.9.zip
+          unzip -q TVLauncher-Source-v1.9.zip -d extracted
+          PROJECT_DIR="$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          test -n "$PROJECT_DIR"
+          test -f "$PROJECT_DIR/settings.gradle"
+          test -f "$PROJECT_DIR/app/build.gradle"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Build Debug and Release APK
+        run: |
+          cd "$PROJECT_DIR"
+          gradle --no-daemon --stacktrace :app:assembleDebug :app:assembleRelease
+
+      - name: Verify APK outputs
+        run: |
+          test -s "$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$PROJECT_DIR/app/build/outputs/apk/release/app-release-unsigned.apk"
+          ls -lh "$PROJECT_DIR"/app/build/outputs/apk/*/*.apk
+
+      - name: Upload installable Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVLauncher-debug-v1.9
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Release APK (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVLauncher-release-unsigned-v1.9
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+          retention-days: 30
