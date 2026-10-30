@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_remote">遙控器</string>
+    <string name="nav_keyboard">鍵盤</string>
+    <string name="nav_devices">設備</string>
+    <string name="smart_remote">智慧遙控器</string>
+    <string name="tv_disconnected">未連接電視</string>
+    <string name="paired_reconnect">已配對；請重新連線</string>
+    <string name="manage">管理</string>
+    <string name="back">返回</string>
+    <string name="home">首頁</string>
+    <string name="recent">最近使用</string>
+    <string name="mute">靜音</string>
+    <string name="play_pause">播放 / 暫停</string>
+    <string name="menu">選單</string>
+    <string name="power">電源</string>
+    <string name="touchpad_hint">觸控板  /  滑動移動焦點，點擊確認</string>
+    <string name="searching_tv">正在搜尋同一個 Wi-Fi 網路中的 Google TV…</string>
+    <string name="search_tv_hint">請先搜尋或輸入電視 IP 位址</string>
+</resources>
