@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-debug-apk:
-    name: Build CHI TV Remote v0.6.9
+    name: Build CHI TV Remote v0.7.0
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -64,8 +64,8 @@ jobs:
           cp patches/TvPairingClient.kt "$TARGET/TvPairingClient.kt"
           cp patches/TvRemoteClient.kt "$TARGET/TvRemoteClient.kt"
           cp patches/AppLanguageSettings.kt GoogleTVRemote/app/src/main/java/com/chi/tvremote/AppLanguageSettings.kt
-          sed -i 's/versionCode = 6/versionCode = 14/' GoogleTVRemote/app/build.gradle.kts
-          sed -i 's/versionName = "0.6.0"/versionName = "0.6.9"/' GoogleTVRemote/app/build.gradle.kts
+          sed -i 's/versionCode = 6/versionCode = 15/' GoogleTVRemote/app/build.gradle.kts
+          sed -i 's/versionName = "0.6.0"/versionName = "0.7.0"/' GoogleTVRemote/app/build.gradle.kts
 
       - name: Integrate language settings navigation
         working-directory: GoogleTVRemote
@@ -96,6 +96,9 @@ jobs:
 
       - name: Apply pairing button feedback
         run: python3 patches/EnablePairingFeedback.py
+
+      - name: Improve pairing status and button feedback
+        run: python3 patches/ImprovePairingStatus.py
 
       - name: Apply explicit pairing state type
         run: python3 patches/FixPairingPendingType.py
@@ -161,7 +164,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: CHI-TV-Remote-v0.6.9-debug
+          name: CHI-TV-Remote-v0.7.0-debug
           path: GoogleTVRemote/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
