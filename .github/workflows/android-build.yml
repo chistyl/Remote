@@ -151,6 +151,9 @@ jobs:
       - name: Apply extended seven-language screens
         run: python3 patches/ApplyExtendedLocalization.py
 
+      - name: Finalize localization audit
+        run: python3 patches/FinalizeLocalizationAudit.py
+
       - name: Build debug APK
         working-directory: GoogleTVRemote
         run: gradle --no-daemon :app:assembleDebug
