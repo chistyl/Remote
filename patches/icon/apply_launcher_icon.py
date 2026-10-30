@@ -15,6 +15,7 @@ text = manifest.read_text(encoding="utf-8")
 needle = '<application\n'
 if needle not in text:
     raise SystemExit("Could not find application tag in AndroidManifest.xml")
+text = text.replace('android:label="CHI TV Remote"', 'android:label="TV Remote"')
 if 'android:icon="@mipmap/ic_launcher"' not in text:
     text = text.replace(needle, needle + '        android:icon="@mipmap/ic_launcher"\n        android:roundIcon="@mipmap/ic_launcher_round"\n', 1)
 manifest.write_text(text, encoding="utf-8")
