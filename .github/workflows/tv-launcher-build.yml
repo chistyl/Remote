@@ -5,6 +5,7 @@ on:
     branches: ["tv-launcher-build"]
     paths:
       - "TVLauncher-Source-v1.9.zip"
+      - ".github/workflows/tv-launcher-build.yml"
   workflow_dispatch:
 
 permissions:
