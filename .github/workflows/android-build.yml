@@ -100,6 +100,9 @@ jobs:
       - name: Apply pairing button feedback
         run: python3 patches/EnablePairingFeedback.py
 
+      - name: Apply explicit pairing state type
+        run: python3 patches/FixPairingPendingType.py
+
       - name: Apply black and white launcher icon
         run: python3 patches/icon/apply_launcher_icon.py
 
