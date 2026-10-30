@@ -44,6 +44,24 @@ jobs:
           test -f GoogleTVRemote/app/build.gradle.kts
           test -f GoogleTVRemote/settings.gradle.kts
 
+      - name: Fix Compose pointer API imports
+        working-directory: GoogleTVRemote
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source = Path("app/src/main/java/com/chi/tvremote/MainActivity.kt")
+          text = source.read_text(encoding="utf-8")
+          invalid_imports = (
+              "import androidx.compose.ui.input.pointer.consume",
+              "import androidx.compose.ui.input.pointer.awaitPointerEvent",
+          )
+          for statement in invalid_imports:
+              text = text.replace(statement + "\\n", "")
+          source.write_text(text, encoding="utf-8")
+          print("Removed invalid top-level imports; consume() and awaitPointerEvent() are scope/member APIs.")
+          PY
+
       - name: Build debug APK
         working-directory: GoogleTVRemote
         run: gradle --no-daemon :app:assembleDebug
