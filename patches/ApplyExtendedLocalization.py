@@ -97,3 +97,51 @@ if settings.exists():
     t = t.replace('Text("選擇 App 顯示語言；預設跟隨手機系統語言。", fontSize = 14.sp)', 'Text(stringResource(R.string.settings_language_desc), fontSize = 14.sp)')
     t = t.replace('label = { Text("介面語言") }', 'label = { Text(stringResource(R.string.settings_language_label)) }')
     settings.write_text(t, encoding="utf-8")
+
+# Complete the remaining always-visible labels in the remote and device screens.
+more = {
+"paired_devices_count":["已配對設備（%1$d）","已配对设备（%1$d）","Paired devices (%1$d)","ペア設定済みデバイス（%1$d）","페어링된 기기 (%1$d)","อุปกรณ์ที่จับคู่แล้ว (%1$d)","Thiết bị đã ghép đôi (%1$d)"],
+"found_devices_count":["搜尋到的設備（%1$d）","搜索到的设备（%1$d）","Discovered devices (%1$d)","検出されたデバイス（%1$d）","검색된 기기 (%1$d)","อุปกรณ์ที่พบ (%1$d)","Thiết bị tìm thấy (%1$d)"],
+"volume_down":["音量 −","音量 −","Volume −","音量 −","볼륨 −","ลดเสียง","Giảm âm lượng"],
+"volume_up":["音量 +","音量 +","Volume +","音量 +","볼륨 +","เพิ่มเสียง","Tăng âm lượng"],
+"local_network_privacy":["區域網路連線・不需雲端帳號","局域网连接・无需云端账号","LOCAL NETWORK · NO CLOUD ACCOUNT","ローカルネットワーク接続・クラウドアカウント不要","로컬 네트워크 연결 · 클라우드 계정 불필요","เชื่อมต่อเครือข่ายท้องถิ่น · ไม่ต้องใช้บัญชีคลาวด์","MẠNG NỘI BỘ · KHÔNG CẦN TÀI KHOẢN ĐÁM MÂY"],
+"touchpad_title":["觸控板操作","触控板操作","TOUCHPAD CONTROL","タッチパッド操作","터치패드 조작","ควบคุมทัชแพด","ĐIỀU KHIỂN BÀN DI"],
+"tv_remote_title":["智慧遙控器","智能遥控器","Smart Remote","スマートリモコン","스마트 리모컨","รีโมทอัจฉริยะ","Điều khiển thông minh"],
+"nav_settings":["設定","设置","Settings","設定","설정","การตั้งค่า","Cài đặt"]
+}
+for idx, folder in enumerate(folders):
+    path = root / folder / "strings.xml"
+    tree = ET.parse(path); res = tree.getroot()
+    existing = {e.attrib.get("name") for e in res.findall("string")}
+    for key, translations in more.items():
+        if key not in existing:
+            node = ET.SubElement(res, "string", {"name": key}); node.text = translations[idx]
+    ET.indent(tree, space="    "); tree.write(path, encoding="utf-8", xml_declaration=True)
+    import shutil
+    target = Path("GoogleTVRemote/app/src/main/res") / folder
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copy(path, target / "strings.xml")
+
+p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
+s = p.read_text(encoding="utf-8")
+more_replacements = {
+'Text("遙控器")':'Text(stringResource(R.string.nav_remote))',
+'Text("鍵盤")':'Text(stringResource(R.string.nav_keyboard))',
+'Text("設備")':'Text(stringResource(R.string.nav_devices))',
+'Text("智慧遙控器",':'Text(stringResource(R.string.tv_remote_title),',
+'Text("管理",':'Text(stringResource(R.string.manage),',
+'Text("LOCAL NETWORK  •  NO CLOUD ACCOUNT"':'Text(stringResource(R.string.local_network_privacy)',
+'Text("觸控板  /  滑動移動焦點，點擊確認"':'Text(stringResource(R.string.touchpad_title)',
+'ActionTile("返回",':'ActionTile(stringResource(R.string.back),',
+'ActionTile("首頁",':'ActionTile(stringResource(R.string.home),',
+'ActionTile("最近使用",':'ActionTile(stringResource(R.string.recent),',
+'ActionTile("音量 −",':'ActionTile(stringResource(R.string.volume_down),',
+'ActionTile("靜音",':'ActionTile(stringResource(R.string.mute),',
+'ActionTile("音量 +",':'ActionTile(stringResource(R.string.volume_up),',
+'Text("已配對設備（${savedDevices.size}）"':'Text(stringResource(R.string.paired_devices_count, savedDevices.size)',
+'Text("搜尋到的設備（${devices.size}）"':'Text(stringResource(R.string.found_devices_count, devices.size)'
+}
+for old, new in more_replacements.items():
+    if old not in s: print("WARN missing static label:", old)
+    else: s = s.replace(old, new)
+p.write_text(s, encoding="utf-8")
