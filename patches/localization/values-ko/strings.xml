@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_remote">리모컨</string>
+    <string name="nav_keyboard">키보드</string>
+    <string name="nav_devices">기기</string>
+    <string name="smart_remote">스마트 리모컨</string>
+    <string name="tv_disconnected">TV 연결 안 됨</string>
+    <string name="paired_reconnect">페어링됨; 다시 연결하세요</string>
+    <string name="manage">관리</string>
+    <string name="back">뒤로</string>
+    <string name="home">홈</string>
+    <string name="recent">최근 사용</string>
+    <string name="mute">음소거</string>
+    <string name="play_pause">재생 / 일시정지</string>
+    <string name="menu">메뉴</string>
+    <string name="power">전원</string>
+    <string name="touchpad_hint">터치패드 / 스와이프로 이동, 탭하여 선택</string>
+    <string name="searching_tv">같은 Wi-Fi의 Google TV 검색 중…</string>
+    <string name="search_tv_hint">TV를 검색하거나 IP 주소를 입력하세요</string>
+</resources>
