@@ -39,3 +39,5 @@ s = re.sub(r'Button\(onClick = onConnect, enabled = [^,]+,', 'Button(onClick = o
 
 p.write_text(s, encoding="utf-8")
 print("Added inline pairing status, progress indicator, and responsive pairing button.")
+
+# Regex corrected: match the existing `else -> DeviceScreen(` branch.
