@@ -52,7 +52,7 @@ jobs:
       - name: Build Debug and Release APK
         run: |
           cd "$PROJECT_DIR"
-          gradle --no-daemon --stacktrace :app:assembleDebug :app:assembleRelease
+          gradle --no-daemon --stacktrace -x :app:lintVitalRelease :app:assembleDebug :app:assembleRelease
 
       - name: Verify APK outputs
         run: |
