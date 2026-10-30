@@ -73,7 +73,7 @@ jobs:
                   raise SystemExit("Could not find android { block in app/build.gradle.kts")
               gradle_text = gradle_text.replace(
                   marker,
-                  marker + "\\n    packaging {\\n        resources {\\n            excludes += \"" + exclude_path + "\"\\n        }\\n    }",
+                  marker + "\n    packaging {\n        resources {\n            excludes += \"" + exclude_path + "\"\n        }\n    }",
                   1,
               )
               gradle_file.write_text(gradle_text, encoding="utf-8")
