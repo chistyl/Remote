@@ -4,7 +4,7 @@ import re
 p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
 s = p.read_text(encoding="utf-8")
 
-# The app has one DeviceScreen call. Inject status regardless of whitespace or prior state patches.
+# Match the actual branch in MainActivity.kt, allowing whitespace changes.
 pattern = r"(else\s*->\s*DeviceScreen\(\s*)"
 s, n = re.subn(pattern, r"\1status = notice,\n                    ", s, count=1)
 if n != 1:
@@ -18,6 +18,7 @@ if n != 1:
 header = '    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)'
 if header not in s:
     raise SystemExit("Could not locate DeviceScreen header")
+
 card = '''    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)
     Spacer(Modifier.height(10.dp))
     Row(
@@ -34,10 +35,11 @@ card = '''    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterS
         Text(status, color = Color.White, fontSize = 12.sp)
     }'''
 s = s.replace(header, card, 1)
-# Ensure the click remains available; click handler displays validation messages.
-s = re.sub(r'Button\(onClick = onConnect, enabled = [^,]+,', 'Button(onClick = onConnect,', s, count=1)
+
+# Keep the button clickable so invalid input and connection state can be shown.
+s, n = re.subn(r'Button\(onClick = onConnect, enabled = [^,]+,', 'Button(onClick = onConnect,', s, count=1)
+if n != 1:
+    raise SystemExit("Could not locate pairing button")
 
 p.write_text(s, encoding="utf-8")
 print("Added inline pairing status, progress indicator, and responsive pairing button.")
-
-# Regex corrected: match the existing `else -> DeviceScreen(` branch.
