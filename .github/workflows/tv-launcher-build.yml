@@ -4,7 +4,7 @@ on:
   push:
     branches: ["tv-launcher-build"]
     paths:
-      - "launcher-source/part-05.txt"
+      - "TVLauncher-Source-v1.9.zip"
   workflow_dispatch:
 
 permissions:
@@ -35,9 +35,9 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Reassemble source archive
+      - name: Extract TV Launcher source
         run: |
-          cat launcher-source/part-*.txt | base64 --decode > TVLauncher-Source-v1.9.zip
+          test -s TVLauncher-Source-v1.9.zip
           unzip -t TVLauncher-Source-v1.9.zip
           unzip -q TVLauncher-Source-v1.9.zip -d extracted
           PROJECT_DIR="$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n 1)"
