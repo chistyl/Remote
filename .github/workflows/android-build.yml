@@ -106,6 +106,9 @@ jobs:
       - name: Apply explicit pairing MutableState access
         run: python3 patches/FixPairingPendingState.py
 
+      - name: Fix RemoteApp context and pairing state order
+        run: python3 patches/FixRemoteAppContextOrder.py
+
       - name: Apply black and white launcher icon
         run: python3 patches/icon/apply_launcher_icon.py
 
