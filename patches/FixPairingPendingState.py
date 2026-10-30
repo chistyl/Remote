@@ -1,20 +1,16 @@
 from pathlib import Path
+import re
 
 p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
 s = p.read_text(encoding="utf-8")
-old_candidates = [
-    "var pairingPending by remember { mutableStateOf(false) }",
-    "var pairingPending: Boolean by remember { mutableStateOf<Boolean>(false) }",
-]
-matched = [candidate for candidate in old_candidates if s.count(candidate) == 1]
-if len(matched) != 1:
-    raise SystemExit(f"Expected exactly one known pairingPending declaration, found {matched}")
-s = s.replace(matched[0], "val pairingPending = remember { androidx.compose.runtime.mutableStateOf(false) }", 1)
 
-# MainActivity's state reads/writes are explicit; the DeviceScreen parameter remains a Boolean.
+pattern = r"var pairingPending(?:\s*:\s*Boolean)?\s+by\s+remember\s*\{\s*mutableStateOf(?:<Boolean>)?\(false\)\s*\}"
+s, count = re.subn(pattern, "val pairingPending = remember { androidx.compose.runtime.mutableStateOf(false) }", s, count=1)
+if count == 0 and "val pairingPending = remember { androidx.compose.runtime.mutableStateOf(false) }" not in s:
+    raise SystemExit("Could not locate pairingPending Compose state declaration")
+
 s = s.replace("pairingPending = pairingPending, pin = pin", "pairingPending = pairingPending.value, pin = pin")
-s = s.replace("pairingPending = false", "pairingPending.value = false")
-s = s.replace("pairingPending = true", "pairingPending.value = true")
+s = re.sub(r"(?<![.\w])pairingPending\s*=\s*(false|true)", r"pairingPending.value = \1", s)
 
 p.write_text(s, encoding="utf-8")
-print("Converted pairingPending to explicit MutableState<Boolean> with .value access.")
+print("Pairing state uses explicit MutableState<Boolean> access.")
