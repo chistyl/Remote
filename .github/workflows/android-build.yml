@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-debug-apk:
-    name: Build CHI TV Remote v0.6.8
+    name: Build CHI TV Remote v0.6.9
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -65,7 +65,7 @@ jobs:
           cp patches/TvRemoteClient.kt "$TARGET/TvRemoteClient.kt"
           cp patches/AppLanguageSettings.kt GoogleTVRemote/app/src/main/java/com/chi/tvremote/AppLanguageSettings.kt
           sed -i 's/versionCode = 6/versionCode = 14/' GoogleTVRemote/app/build.gradle.kts
-          sed -i 's/versionName = "0.6.0"/versionName = "0.6.8"/' GoogleTVRemote/app/build.gradle.kts
+          sed -i 's/versionName = "0.6.0"/versionName = "0.6.9"/' GoogleTVRemote/app/build.gradle.kts
 
       - name: Integrate language settings navigation
         working-directory: GoogleTVRemote
@@ -151,10 +151,6 @@ jobs:
       - name: Apply extended seven-language screens
         run: python3 patches/ApplyExtendedLocalization.py
 
-      - name: Print transformed MainActivity context
-        working-directory: GoogleTVRemote
-        run: nl -ba app/src/main/java/com/chi/tvremote/MainActivity.kt | sed -n '68,100p;180,200p'
-
       - name: Build debug APK
         working-directory: GoogleTVRemote
         run: gradle --no-daemon :app:assembleDebug
@@ -162,7 +158,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: CHI-TV-Remote-v0.6.8-debug
+          name: CHI-TV-Remote-v0.6.9-debug
           path: GoogleTVRemote/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
