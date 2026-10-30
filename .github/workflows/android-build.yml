@@ -45,6 +45,18 @@ jobs:
           test -f GoogleTVRemote/app/build.gradle.kts
           test -f GoogleTVRemote/settings.gradle.kts
 
+      - name: Package extracted source for UI integration review
+        run: |
+          zip -qr /tmp/CHI-TV-Remote-source-review.zip GoogleTVRemote
+
+      - name: Upload extracted source review
+        uses: actions/upload-artifact@v4
+        with:
+          name: CHI-TV-Remote-source-review
+          path: /tmp/CHI-TV-Remote-source-review.zip
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Apply startup crash fix
         run: |
           TARGET="GoogleTVRemote/app/src/main/java/com/chi/tvremote/protocol"
