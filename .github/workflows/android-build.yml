@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build-debug-apk:
-    name: Build CHI TV Remote v0.6.2
+    name: Build CHI TV Remote v0.6.3
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -64,8 +64,8 @@ jobs:
           cp patches/TvPairingClient.kt "$TARGET/TvPairingClient.kt"
           cp patches/TvRemoteClient.kt "$TARGET/TvRemoteClient.kt"
           cp patches/AppLanguageSettings.kt GoogleTVRemote/app/src/main/java/com/chi/tvremote/AppLanguageSettings.kt
-          sed -i 's/versionCode = 6/versionCode = 8/' GoogleTVRemote/app/build.gradle.kts
-          sed -i 's/versionName = "0.6.0"/versionName = "0.6.2"/' GoogleTVRemote/app/build.gradle.kts
+          sed -i 's/versionCode = 6/versionCode = 9/' GoogleTVRemote/app/build.gradle.kts
+          sed -i 's/versionName = "0.6.0"/versionName = "0.6.3"/' GoogleTVRemote/app/build.gradle.kts
 
       - name: Integrate language settings navigation
         working-directory: GoogleTVRemote
@@ -87,6 +87,9 @@ jobs:
           p.write_text(s, encoding="utf-8")
           print("Added Settings tab and seven-language preference screen.")
           PY
+
+      - name: Apply interactive button feedback
+        run: python3 patches/EnableInteractiveFeedback.py
 
       - name: Fix Compose pointer API imports
         working-directory: GoogleTVRemote
@@ -131,7 +134,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: CHI-TV-Remote-v0.6.2-debug
+          name: CHI-TV-Remote-v0.6.3-debug
           path: GoogleTVRemote/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
