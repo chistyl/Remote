@@ -1,30 +1,27 @@
 from pathlib import Path
+import re
 
 p = Path("GoogleTVRemote/app/src/main/java/com/chi/tvremote/MainActivity.kt")
 s = p.read_text(encoding="utf-8")
 
-# Surface the current connection notice directly inside the device screen.
-old_call = """                else -> DeviceScreen(
-                    ip = ip, onIp = { ip = it }, devices = discovered, savedDevices = savedDevices, searching = searching,"""
-new_call = """                else -> DeviceScreen(
-                    status = notice,
-                    ip = ip, onIp = { ip = it }, devices = discovered, savedDevices = savedDevices, searching = searching,"""
-if old_call not in s:
-    raise SystemExit("Could not locate DeviceScreen call site")
-s = s.replace(old_call, new_call, 1)
+# The app has one DeviceScreen call. Inject status regardless of whitespace or prior state patches.
+pattern = r"(else\s*->\s*DeviceScreen\(\s*)"
+s, n = re.subn(pattern, r"\1status = notice,\n                    ", s, count=1)
+if n != 1:
+    raise SystemExit(f"Could not locate DeviceScreen call site (matches={n})")
 
-old_sig = """private fun DeviceScreen(ip: String, onIp: (String) -> Unit,"""
-new_sig = """private fun DeviceScreen(status: String, ip: String, onIp: (String) -> Unit,"""
-if old_sig not in s:
-    raise SystemExit("Could not locate DeviceScreen signature")
-s = s.replace(old_sig, new_sig, 1)
+pattern = r"private fun DeviceScreen\("
+s, n = re.subn(pattern, "private fun DeviceScreen(status: String, ", s, count=1)
+if n != 1:
+    raise SystemExit(f"Could not locate DeviceScreen signature (matches={n})")
 
-old_header = """    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)
-    Spacer(Modifier.height(14.dp))"""
-new_header = """    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)
+header = '    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)'
+if header not in s:
+    raise SystemExit("Could not locate DeviceScreen header")
+card = '''    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterSpacing = 1.6.sp)
     Spacer(Modifier.height(10.dp))
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Panel2).padding(12.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Panel).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (status.contains("正在")) {
@@ -35,21 +32,10 @@ new_header = """    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, l
             Spacer(Modifier.width(10.dp))
         }
         Text(status, color = Color.White, fontSize = 12.sp)
-    }
-    Spacer(Modifier.height(14.dp))"""
-if old_header not in s:
-    raise SystemExit("Could not locate DeviceScreen header")
-s = s.replace(old_header, new_header, 1)
-
-# Keep the pairing button visibly enabled; all validation is surfaced by the click handler.
-s = s.replace(
-    'Button(onClick = onConnect, enabled = ip.isNotBlank() && !pairingPending, modifier = Modifier.fillMaxWidth(),',
-    'Button(onClick = onConnect, modifier = Modifier.fillMaxWidth(),'
-)
-s = s.replace(
-    'Button(onClick = onConnect, enabled = !pairingPending, modifier = Modifier.fillMaxWidth(),',
-    'Button(onClick = onConnect, modifier = Modifier.fillMaxWidth(),'
-)
+    }'''
+s = s.replace(header, card, 1)
+# Ensure the click remains available; click handler displays validation messages.
+s = re.sub(r'Button\(onClick = onConnect, enabled = [^,]+,', 'Button(onClick = onConnect,', s, count=1)
 
 p.write_text(s, encoding="utf-8")
-print("Added inline pairing status, progress indicator, and always-responsive pairing button.")
+print("Added inline pairing status, progress indicator, and responsive pairing button.")
