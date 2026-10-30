@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_remote">รีโมต</string>
+    <string name="nav_keyboard">แป้นพิมพ์</string>
+    <string name="nav_devices">อุปกรณ์</string>
+    <string name="smart_remote">รีโมตอัจฉริยะ</string>
+    <string name="tv_disconnected">ยังไม่ได้เชื่อมต่อทีวี</string>
+    <string name="paired_reconnect">จับคู่แล้ว; โปรดเชื่อมต่อใหม่</string>
+    <string name="manage">จัดการ</string>
+    <string name="back">ย้อนกลับ</string>
+    <string name="home">หน้าแรก</string>
+    <string name="recent">ล่าสุด</string>
+    <string name="mute">ปิดเสียง</string>
+    <string name="play_pause">เล่น / หยุดชั่วคราว</string>
+    <string name="menu">เมนู</string>
+    <string name="power">พลังงาน</string>
+    <string name="touchpad_hint">ทัชแพด / ปัดเพื่อเลื่อน แตะเพื่อเลือก</string>
+    <string name="searching_tv">กำลังค้นหา Google TV บน Wi-Fi นี้…</string>
+    <string name="search_tv_hint">ค้นหาทีวีหรือป้อนที่อยู่ IP</string>
+</resources>
