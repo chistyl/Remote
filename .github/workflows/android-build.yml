@@ -63,6 +63,21 @@ jobs:
           text = "".join(line for line in lines if line.strip() not in invalid_imports)
           source.write_text(text, encoding="utf-8")
           print("Removed invalid top-level imports; consume() and awaitPointerEvent() are scope/member APIs.")
+
+          gradle_file = Path("app/build.gradle.kts")
+          gradle_text = gradle_file.read_text(encoding="utf-8")
+          exclude_path = "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+          if exclude_path not in gradle_text:
+              marker = "android {"
+              if marker not in gradle_text:
+                  raise SystemExit("Could not find android { block in app/build.gradle.kts")
+              gradle_text = gradle_text.replace(
+                  marker,
+                  marker + "\\n    packaging {\\n        resources {\\n            excludes += \"" + exclude_path + "\"\\n        }\\n    }",
+                  1,
+              )
+              gradle_file.write_text(gradle_text, encoding="utf-8")
+          print("Added Android packaging exclusion for duplicate Bouncy Castle OSGI manifest.")
           PY
 
       - name: Build debug APK
