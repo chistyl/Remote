@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_remote">Remote</string>
+    <string name="nav_keyboard">Keyboard</string>
+    <string name="nav_devices">Devices</string>
+    <string name="smart_remote">Smart Remote</string>
+    <string name="tv_disconnected">TV not connected</string>
+    <string name="paired_reconnect">Paired; reconnect</string>
+    <string name="manage">Manage</string>
+    <string name="back">Back</string>
+    <string name="home">Home</string>
+    <string name="recent">Recent</string>
+    <string name="mute">Mute</string>
+    <string name="play_pause">Play / Pause</string>
+    <string name="menu">Menu</string>
+    <string name="power">Power</string>
+    <string name="touchpad_hint">Touchpad / Swipe to move, tap to select</string>
+    <string name="searching_tv">Searching Google TV on this Wi-Fi…</string>
+    <string name="search_tv_hint">Search for a TV or enter its IP address</string>
+</resources>
