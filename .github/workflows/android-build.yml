@@ -145,6 +145,10 @@ jobs:
           print("Added Android packaging exclusion for duplicate Bouncy Castle OSGI manifest.")
           PY
 
+      - name: Print transformed MainActivity context
+        working-directory: GoogleTVRemote
+        run: nl -ba app/src/main/java/com/chi/tvremote/MainActivity.kt | sed -n '68,100p;180,200p'
+
       - name: Build debug APK
         working-directory: GoogleTVRemote
         run: gradle --no-daemon :app:assembleDebug
