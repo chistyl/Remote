@@ -1,0 +1,63 @@
+name: TV Remote v1.1.11 native build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ work/tvremote-v1.1.11-native ]
+    paths:
+      - 'TVRemote_New/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout v1.1.11 source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Run unit tests
+        working-directory: TVRemote_New
+        run: gradle :app:testDebugUnitTest --no-daemon
+
+      - name: Build debug APK
+        working-directory: TVRemote_New
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Verify APK and calculate SHA-256
+        working-directory: TVRemote_New
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload v1.1.11 debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVRemote-v1.1.11-debug
+          path: TVRemote_New/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload v1.1.11 complete source
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVRemote-v1.1.11-source
+          path: TVRemote_New/
+          if-no-files-found: error
