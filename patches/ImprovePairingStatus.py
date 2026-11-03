@@ -36,9 +36,11 @@ card = '''    Text("DEVICE CONNECTION", color = Muted, fontSize = 11.sp, letterS
     }'''
 s = s.replace(header, card, 1)
 
+# EnablePairingFeedback.py may already have removed the enabled= argument.
+# Accept both source shapes so this patch remains compatible with the ordered patch pipeline.
 s, n = re.subn(r'Button\(onClick = onConnect, enabled = [^,]+,', 'Button(onClick = onConnect,', s, count=1)
-if n != 1:
-    raise SystemExit("Could not locate pairing button")
+if n == 0 and 'Button(onClick = onConnect,' not in s:
+    raise SystemExit("Could not locate pairing button (neither pre- nor post-feedback form)")
 
 p.write_text(s, encoding="utf-8")
 print("Added inline pairing status, progress indicator, and responsive pairing button.")
