@@ -1,9 +1,9 @@
-name: TV Remote v1.1.12 native build
+name: TV Remote v1.1.13 native build
 
 on:
   workflow_dispatch:
   push:
-    branches: [ work/tvremote-v1.1.11-native, work/tvremote-v1.1.12-five-features ]
+    branches: [ work/tvremote-v1.1.11-native, work/tvremote-v1.1.13-five-features ]
     paths:
       - 'TVRemote_New/**'
       - '.github/workflows/android-build-v1.1.11.yml'
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: tvremote-v1.1.12-${{ github.ref }}
+  group: tvremote-v1.1.13-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout v1.1.12 source
+      - name: Checkout v1.1.13 source
         uses: actions/checkout@v4
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -51,17 +51,17 @@ jobs:
       - name: Package complete source ZIP
         run: |
           cd TVRemote_New
-          zip -r ../TVRemote-v1.1.12-source.zip . -x "*/build/*" ".gradle/*"
-          test -s ../TVRemote-v1.1.12-source.zip
-      - name: Upload v1.1.12 debug APK
+          zip -r ../TVRemote-v1.1.13-source.zip . -x "*/build/*" ".gradle/*"
+          test -s ../TVRemote-v1.1.13-source.zip
+      - name: Upload v1.1.13 debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: TVRemote-v1.1.12-debug
+          name: TVRemote-v1.1.13-debug
           path: TVRemote_New/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-      - name: Upload v1.1.12 complete source ZIP
+      - name: Upload v1.1.13 complete source ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: TVRemote-v1.1.12-source
-          path: TVRemote-v1.1.12-source.zip
+          name: TVRemote-v1.1.13-source
+          path: TVRemote-v1.1.13-source.zip
           if-no-files-found: error
