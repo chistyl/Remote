@@ -50,10 +50,13 @@ internal object AdbSyncProtocol {
 
     @Throws(IOException::class)
     fun parseResponse(bytes: ByteArray): Response {
-        if (bytes.size < 8) throw IOException("ADB SYNC 回應長度不足")
+        if (bytes.size < 4) throw IOException("ADB SYNC 回應長度不足")
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
         return when (buffer.int) {
-            ID_OKAY -> Response(true, "")
+            ID_OKAY -> {
+                if (buffer.hasRemaining()) throw IOException("ADB SYNC OKAY 回應格式不合法")
+                Response(true, "")
+            }
             ID_FAIL -> {
                 val length = buffer.int
                 if (length < 0 || length > buffer.remaining()) {
