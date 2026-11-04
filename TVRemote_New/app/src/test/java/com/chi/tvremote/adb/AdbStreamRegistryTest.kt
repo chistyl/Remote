@@ -47,6 +47,25 @@ class AdbStreamRegistryTest {
     }
 
     @Test
+    fun duplexStreamRoutesInboundDataAndWriteAcknowledgementsSeparately() {
+        val registry = AdbStreamRegistry()
+        val stream = registry.open()
+        stream.enableDuplex()
+
+        val okay = 0x59414b4f
+        val write = 0x45545257
+        assertTrue(registry.dispatchTransportPacket(write, 77, stream.localId, byteArrayOf(1, 2)))
+        assertTrue(registry.dispatchTransportPacket(okay, 77, stream.localId, byteArrayOf()))
+
+        val data = stream.takeDuplexData(100)
+        val ack = stream.takeDuplexAck(100)
+        assertEquals(write, data.command)
+        assertArrayEquals(byteArrayOf(1, 2), data.payload)
+        assertEquals(okay, ack.command)
+        assertEquals(77, ack.remoteId)
+    }
+
+    @Test
     fun closingStreamWakesBlockedConsumerImmediately() {
         val registry = AdbStreamRegistry()
         val stream = registry.open()
