@@ -144,6 +144,17 @@ private fun MousePage(vm: RemoteViewModel) {
                 OutlinedButton(onClick = { vm.installScrcpyServer() }, enabled = !connecting && host.isNotBlank()) {
                     Text("部署滑鼠服務元件")
                 }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { vm.startScrcpyMouseService() },
+                        enabled = !connecting && host.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RemoteAccent)
+                    ) { Text("啟動滑鼠服務") }
+                    OutlinedButton(onClick = { vm.stopScrcpyMouseService() }) {
+                        Text("停止")
+                    }
+                }
                 Spacer(Modifier.height(14.dp))
                 Text(adbStatus, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
@@ -153,7 +164,7 @@ private fun MousePage(vm: RemoteViewModel) {
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    if (ready) "遙控器已連線；滑鼠控制尚待虛擬 HID 驅動整合" else "請先完成電視配對與連線",
+                    if (ready) "遙控器已連線；滑鼠服務需另行完成 ADB 授權" else "請先完成電視配對與連線",
                     color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall
                 )
             }
