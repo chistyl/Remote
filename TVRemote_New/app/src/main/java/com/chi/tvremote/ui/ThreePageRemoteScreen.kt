@@ -24,7 +24,7 @@ private val RemoteAccent = Color(0xFF8B78FF)
 
 @Composable
 fun ThreePageRemoteScreen(vm: RemoteViewModel) {
-    val pager = rememberPagerState(pageCount = { 2 })
+    val pager = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().background(RemoteBg)) {
         HorizontalPager(
@@ -35,7 +35,8 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             when (page) {
                 0 -> RemoteScreen(vm)
                 1 -> NumberPadPage(vm)
-                else -> NumberPadPage(vm)
+                1 -> NumberPadPage(vm)
+                else -> MousePage()
             }
         }
         Row(
@@ -43,7 +44,7 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            repeat(2) { index ->
+            repeat(3) { index ->
                 Surface(
                     onClick = { scope.launch { pager.animateScrollToPage(index) } },
                     shape = CircleShape,
@@ -99,3 +100,36 @@ private fun NumberPadPage(vm: RemoteViewModel) {
     }
 }
 
+
+@Composable
+private fun MousePage() {
+    Column(
+        Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 24.dp, vertical = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("滑鼠控制", color = Color.White, style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(20.dp))
+        Surface(
+            color = Color(0xFF353535),
+            shape = RoundedCornerShape(28.dp),
+            modifier = Modifier.fillMaxWidth().weight(1f)
+        ) {
+            Column(
+                Modifier.fillMaxSize().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(Icons.Default.Mouse, contentDescription = null, tint = Color(0xFF8B78FF), modifier = Modifier.size(54.dp))
+                Spacer(Modifier.height(16.dp))
+                Text("滑鼠觸控區", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Text("滑鼠游標控制需要建立電視端 ADB／虛擬 HID 連線",
+                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(6.dp))
+                Text("目前尚未啟用真正的游標移動與點擊，避免以方向鍵模擬滑鼠。",
+                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
