@@ -25,8 +25,8 @@ class AdbTransportMultiplexTest {
                 val output = DataOutputStream(peer.getOutputStream())
                 val opens = listOf(readPacket(input), readPacket(input))
                 assertTrue(opens.all { it.command == A_OPEN })
-                val first = opens[0]
-                val second = opens[1]
+                val first = opens.single { String(it.payload).contains("echo first") }
+                val second = opens.single { String(it.payload).contains("echo second") }
 
                 // Open both logical streams, then interleave their payloads.
                 output.write(AdbPacketCodec.encode(A_OKAY, 501, first.arg0, byteArrayOf()))
@@ -46,8 +46,8 @@ class AdbTransportMultiplexTest {
         try {
             val first = workers.submit<String> { transport.shell("echo first", 5000) }
             val second = workers.submit<String> { transport.shell("echo second", 5000) }
-            val results = setOf(first.get(6, TimeUnit.SECONDS), second.get(6, TimeUnit.SECONDS))
-            assertEquals(setOf("first-result", "second-result"), results)
+            assertEquals("first-result", first.get(6, TimeUnit.SECONDS))
+            assertEquals("second-result", second.get(6, TimeUnit.SECONDS))
             assertTrue(serverResult.get(2, TimeUnit.SECONDS))
         } finally {
             transport.close()
@@ -57,7 +57,7 @@ class AdbTransportMultiplexTest {
         }
     }
 
-    private data class Frame(val command: Int, val arg0: Int, val arg1: Int)
+    private data class Frame(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
 
     private fun readPacket(input: DataInputStream): Frame {
         val header = ByteArray(24)
@@ -70,7 +70,7 @@ class AdbTransportMultiplexTest {
         val payload = ByteArray(length)
         input.readFully(payload)
         AdbPacketCodec.decode(header, payload)
-        return Frame(command, arg0, arg1)
+        return Frame(command, arg0, arg1, payload)
     }
 
     companion object {
