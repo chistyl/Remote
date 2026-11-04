@@ -54,17 +54,14 @@ APK 預期輸出：`app/build/outputs/apk/debug/app-debug.apk`
 - 已檢查語言鍵值引用、Android XML 格式、重複控制列清除及 ZIP 完整性。
 - 目前執行環境沒有 Android SDK／Gradle，無法在此完成 Android 全專案編譯、APK 產生、安裝或真實電視配對測試；不可將獨立 Kotlin 測試視為完整 APK 建置成功。
 
-
 ### v1.1.6
 - 修正取消配對後舊工作覆寫新配對狀態，以及舊 socket 清理競態。
-
 
 ### v1.1.7 本輪修正
 - 修正配對取消與重新開始同時發生時，socket 可能在取消後才被舊工作掛回共享欄位的競態。
 - 配對世代、socket 指派、狀態更新、取消與舊工作清理改由同一把鎖保護。
 - 舊世代無法更新新配對狀態，也無法關閉新一輪配對的 socket。
 - versionCode 更新為 19，versionName 更新為 1.1.7。
-
 
 ### v1.1.8 本輪修正
 - 修正配對碼使用全域 rendezvous Channel 的跨輪次問題：取消配對時，舊的送碼 coroutine 可能持續等待，或延遲送出的舊配對碼可能被下一輪配對接收。
@@ -78,7 +75,6 @@ APK 預期輸出：`app/build/outputs/apk/debug/app-debug.apk`
 - 舊世代建立的 socket 若在取消或切換後才完成握手，會立即關閉，不會被設為目前連線。
 - 舊 read loop 的回覆固定寫回來源 socket，不會誤送到新電視。
 - versionCode 更新為 21，versionName 更新為 1.1.9。
-
 
 ### v1.1.10 本輪修正
 - 重置每次連線取得的電視功能旗標，避免切換不同電視時沿用上一台電視的能力狀態。
@@ -96,9 +92,12 @@ APK 預期輸出：`app/build/outputs/apk/debug/app-debug.apk`
 - Android XML、版本號、NSD 過期回呼防護與 ZIP 完整性檢查通過。
 - **尚未完成** Android Gradle 全專案建置、APK 安裝及 Android 9 電視實機測試；不可將上述獨立模組測試視為 APK 完整驗收。
 
-
 ### v1.1.11 追加除錯修正（同名服務快速離線／重新出現）
 - 發現原本僅使用 `lostServiceNames` 的保護仍有競態：同名 mDNS 服務若在舊 resolve callback 返回前重新出現，`onServiceFound` 會先清除離線標記，舊 callback 可能被誤認為有效。
 - 新增 `ServiceResolveEpoch`，每次 `onServiceLost` 都增加該服務的世代；resolve 開始時記錄世代，回呼只有在世代仍一致時才能加入裝置清單。重新發現服務不會讓舊回呼復活。
 - 新增 3 項回歸測試，涵蓋同名服務快速重新出現、不同服務互不影響，以及新一輪搜尋重置世代。
 - 追加測試後共 23 項純 Kotlin 測試通過。完整 Android Gradle 建置及 Android 9 實機測試仍待 GitHub CI／實機驗證。
+
+### CI 啟動修正
+- 將 v1.1.11 專用 GitHub Actions 工作流程同步放到預設分支，確保 GitHub 能辨識並允許此工作流程執行。
+- 本次文件提交用來重新觸發原生 Android 測試與 APK 建置；不變更 APP 功能。
