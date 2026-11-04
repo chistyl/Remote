@@ -46,4 +46,25 @@ class AdbPacketCodecTest {
             fail("Expected checksum mismatch to be rejected")
         } catch (_: IOException) { }
     }
+
+    @Test
+    fun rejectsHeaderPayloadLengthMismatch() {
+        val encoded = AdbPacketCodec.encode(0x4e45504f, 1, 0, byteArrayOf(1, 2))
+        val header = encoded.copyOfRange(0, 24)
+        try {
+            AdbPacketCodec.decode(header, byteArrayOf(1))
+            fail("Expected payload length mismatch to be rejected")
+        } catch (_: IOException) { }
+    }
+
+    @Test
+    fun rejectsPayloadAboveNegotiatedPeerLimit() {
+        val payload = ByteArray(32) { it.toByte() }
+        val encoded = AdbPacketCodec.encode(0x4e45504f, 1, 0, payload)
+        val header = encoded.copyOfRange(0, 24)
+        try {
+            AdbPacketCodec.decode(header, payload, maxPayload = 16)
+            fail("Expected payload above negotiated limit to be rejected")
+        } catch (_: IOException) { }
+    }
 }
