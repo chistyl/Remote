@@ -71,6 +71,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
     val voiceNotSupportedLabel = t("voice_not_supported")
     val textSentLabel = t("text_sent")
     val textFailedLabel = t("text_failed")
+    val textSyncFailedLabel = t("text_sync_failed")
 
     fun startVoiceCapture() {
         if (voiceJob?.isActive == true || !ready || !voiceSupported) return
@@ -195,7 +196,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     if (initialText.isNotEmpty() && textValue.composition == null) {
                         lastRealtimeText = initialText
                         vm.sendRealtimeTextDelta("", initialText) { sent ->
-                            if (!sent) textStatus = t("text_sync_failed")
+                            if (!sent) textStatus = textSyncFailedLabel
                         }
                     } else {
                         lastRealtimeText = ""
