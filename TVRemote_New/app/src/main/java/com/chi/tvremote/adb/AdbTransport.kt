@@ -121,6 +121,44 @@ class AdbTransport private constructor(
     }
 
     /**
+     * Opens an ADB localabstract service as a full-duplex byte channel.
+     * Inbound WRTE packets and outbound A_OKAY flow-control replies are routed
+     * to independent queues, so a reader can never consume a writer's ACK.
+     */
+    @Throws(IOException::class)
+    fun openLocalAbstract(name: String, timeoutMs: Int = 10000): AdbDuplexChannel {
+        if (!connected) throw IOException("ADB 尚未連線")
+        require(name.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) { "localabstract 名稱不合法" }
+        require(timeoutMs > 0) { "timeoutMs 必須大於 0" }
+        val stream = streamRegistry.open()
+        stream.enableDuplex()
+        try {
+            writePacket(A_OPEN, stream.localId, 0,
+                ("localabstract:" + name + "\u0000").toByteArray(Charsets.UTF_8))
+            val opened = stream.takeDuplexAck(timeoutMs.toLong())
+            if (opened.command != A_OKAY || opened.remoteId <= 0) {
+                throw IOException("電視拒絕開啟 ADB localabstract:$name")
+            }
+            return AdbDuplexChannel(
+                localId = stream.localId,
+                remoteId = opened.remoteId,
+                maxPayload = peerMaxPayload,
+                readPacket = { waitMs -> stream.takeDuplexData(waitMs) },
+                writePacket = { command, local, remote, payload ->
+                    this.writePacket(command, local, remote, payload)
+                },
+                closeStream = { local, remote ->
+                    if (connected) this.writePacket(A_CLSE, local, remote, ByteArray(0))
+                    streamRegistry.close(local)
+                }
+            )
+        } catch (e: IOException) {
+            streamRegistry.close(stream.localId)
+            throw e
+        }
+    }
+
+    /**
      * Pushes a local file through the ADB SYNC service on its own logical stream.
      * The transport reader remains shared, while every WRTE is flow-controlled by
      * its matching A_OKAY before the next chunk is sent.
