@@ -36,6 +36,10 @@ class AdbTransportMultiplexTest {
                 output.write(AdbPacketCodec.encode(A_CLSE, 502, second.arg0, byteArrayOf()))
                 output.write(AdbPacketCodec.encode(A_CLSE, 501, first.arg0, byteArrayOf()))
                 output.flush()
+
+                // Keep the peer socket alive until the client acknowledges both
+                // WRTE payloads and both stream closures.
+                repeat(4) { readPacket(input) }
                 true
             }
         })
