@@ -58,6 +58,49 @@ internal object ScrcpyControlProtocol {
         }
     }
 
+    const val HID_ID_MOUSE = 2
+    const val HID_MOUSE_INPUT_SIZE = 5
+
+    /**
+     * Exact mouse report descriptor from scrcpy v5.0.1 app/src/hid/hid_mouse.c.
+     * Report: buttons, relative X, relative Y, vertical wheel, horizontal pan.
+     */
+    val HID_MOUSE_REPORT_DESCRIPTOR = byteArrayOf(
+        0x05, 0x01, 0x09, 0x02, 0xA1.toByte(), 0x01, 0x09, 0x01,
+        0xA1.toByte(), 0x00, 0x05, 0x09, 0x19, 0x01, 0x29, 0x05,
+        0x15, 0x00, 0x25, 0x01, 0x95.toByte(), 0x05, 0x75, 0x01,
+        0x81.toByte(), 0x02, 0x95.toByte(), 0x01, 0x75, 0x03,
+        0x81.toByte(), 0x01, 0x05, 0x01, 0x09, 0x30, 0x09, 0x31,
+        0x09, 0x38, 0x15, 0x81.toByte(), 0x25, 0x7F, 0x75, 0x08,
+        0x95.toByte(), 0x03, 0x81.toByte(), 0x06, 0x05, 0x0C,
+        0x0A, 0x38, 0x02, 0x15, 0x81.toByte(), 0x25, 0x7F,
+        0x75, 0x08, 0x95.toByte(), 0x01, 0x81.toByte(), 0x06,
+        0xC0.toByte(), 0xC0.toByte()
+    )
+
+    fun mouseUhidCreate(vendorId: Int = 0, productId: Int = 0): ByteArray =
+        uhidCreate(HID_ID_MOUSE, vendorId, productId, "scrcpy", HID_MOUSE_REPORT_DESCRIPTOR)
+
+    /** Creates the official 5-byte scrcpy relative mouse report. */
+    fun mouseUhidInput(
+        buttons: Int = 0,
+        relativeX: Int = 0,
+        relativeY: Int = 0,
+        verticalScroll: Int = 0,
+        horizontalScroll: Int = 0
+    ): ByteArray {
+        require(buttons in 0..31) { "Mouse buttons must be a 5-bit mask" }
+        require(relativeX in -127..127 && relativeY in -127..127) { "Mouse movement must be in -127..127" }
+        require(verticalScroll in -127..127 && horizontalScroll in -127..127) { "Mouse scroll must be in -127..127" }
+        return uhidInput(HID_ID_MOUSE, byteArrayOf(
+            buttons.toByte(),
+            relativeX.toByte(),
+            relativeY.toByte(),
+            verticalScroll.toByte(),
+            horizontalScroll.toByte()
+        ))
+    }
+
     /** Scrcpy touch injection format; coordinates are relative to the supplied display size. */
     fun injectTouch(
         action: Int,
