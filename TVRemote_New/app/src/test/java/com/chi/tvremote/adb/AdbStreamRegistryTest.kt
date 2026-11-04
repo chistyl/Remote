@@ -6,6 +6,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class AdbStreamRegistryTest {
     @Test
@@ -41,6 +44,28 @@ class AdbStreamRegistryTest {
         assertArrayEquals(byteArrayOf(9), secondPacket.payload)
         assertFalse(registry.dispatchTransportPacket(write, 1, 9999, byteArrayOf()))
         assertFalse(registry.dispatchTransportPacket(0x12345678, 1, first.localId, byteArrayOf()))
+    }
+
+    @Test
+    fun closingStreamWakesBlockedConsumerImmediately() {
+        val registry = AdbStreamRegistry()
+        val stream = registry.open()
+        val started = CountDownLatch(1)
+        val result = AtomicReference<Throwable?>(null)
+        val worker = Thread {
+            started.countDown()
+            try {
+                stream.take(30000)
+            } catch (error: Throwable) {
+                result.set(error)
+            }
+        }
+        worker.start()
+        assertTrue(started.await(1, TimeUnit.SECONDS))
+        registry.close(stream.localId)
+        worker.join(1000)
+        assertFalse(worker.isAlive)
+        assertTrue(result.get() is IOException)
     }
 
     @Test
