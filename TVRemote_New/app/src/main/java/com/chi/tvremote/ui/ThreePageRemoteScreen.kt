@@ -35,7 +35,6 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             when (page) {
                 0 -> RemoteScreen(vm)
                 1 -> NumberPadPage(vm)
-                1 -> NumberPadPage(vm)
                 else -> MousePage(vm)
             }
         }
