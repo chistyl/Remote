@@ -21,7 +21,6 @@ import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicReference
-import java.net.Socket
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.asStateFlow
@@ -385,6 +384,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         remote.disconnect()
+        try { adbPendingSocket.getAndSet(null)?.close() } catch (_: Exception) {}
         try { adbTransport?.close() } catch (_: Exception) {}
         adbTransport = null
         pairing.cancel()
