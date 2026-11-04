@@ -24,7 +24,7 @@ private val RemoteAccent = Color(0xFF8B78FF)
 
 @Composable
 fun ThreePageRemoteScreen(vm: RemoteViewModel) {
-    val pager = rememberPagerState(pageCount = { 3 })
+    val pager = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().background(RemoteBg)) {
         HorizontalPager(
@@ -35,7 +35,7 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             when (page) {
                 0 -> RemoteScreen(vm)
                 1 -> NumberPadPage(vm)
-                else -> MousePage()
+                else -> NumberPadPage(vm)
             }
         }
         Row(
@@ -43,7 +43,7 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            repeat(3) { index ->
+            repeat(2) { index ->
                 Surface(
                     onClick = { scope.launch { pager.animateScrollToPage(index) } },
                     shape = CircleShape,
@@ -60,70 +60,42 @@ private fun NumberPadPage(vm: RemoteViewModel) {
     val ready by vm.remote.ready.collectAsState()
     val keys = listOf(
         listOf("1", "2", "3"), listOf("4", "5", "6"),
-        listOf("7", "8", "9"), listOf("*", "0", "#")
+        listOf("7", "8", "9"), listOf("TV", "0", "Menu")
     )
     Column(
-        Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 24.dp, vertical = 18.dp),
+        Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 26.dp, vertical = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("數字鍵盤", color = Color.White, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(24.dp))
-        keys.forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Spacer(Modifier.weight(0.15f))
+        keys.forEachIndexed { rowIndex, row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { label ->
+                    val outlined = label == "TV" || label == "Menu"
                     Surface(
-                        onClick = { if (ready) vm.sendKey(when (label) { "*" -> 17; "#" -> 18; else -> 7 + label.toInt() }) },
+                        onClick = {
+                            if (ready) vm.sendKey(when (label) {
+                                "TV" -> 170
+                                "Menu" -> KeyCodes.MENU
+                                else -> 7 + label.toInt()
+                            })
+                        },
                         enabled = ready,
-                        color = RemoteCard,
+                        color = if (outlined) Color.Transparent else Color(0xFF353535),
                         contentColor = Color.White,
-                        shape = CircleShape,
-                        modifier = Modifier.weight(1f).aspectRatio(1f).padding(4.dp)
+                        shape = RoundedCornerShape(14.dp),
+                        border = if (outlined) androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF484848)) else null,
+                        modifier = Modifier.weight(1f).aspectRatio(1.08f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(label, style = MaterialTheme.typography.headlineMedium)
+                            Text(label, style = if (label.length > 1) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineMedium)
                         }
                     }
                 }
             }
-            Spacer(Modifier.height(10.dp))
+            if (rowIndex != keys.lastIndex) Spacer(Modifier.height(14.dp))
         }
+        Spacer(Modifier.weight(0.45f))
     }
 }
 
-@Composable
-private fun MousePage() {
-    Column(
-        Modifier.fillMaxSize().background(RemoteBg).padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(
-            color = RemoteCard,
-            shape = RoundedCornerShape(28.dp),
-            modifier = Modifier.fillMaxWidth().weight(1f)
-        ) {
-            Column(
-                Modifier.fillMaxSize().padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Default.Mouse, contentDescription = null, tint = RemoteAccent, modifier = Modifier.size(54.dp))
-                Spacer(Modifier.height(18.dp))
-                Text("滑鼠控制", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    "尚未建立電視端 ADB／虛擬 HID 連線",
-                    color = Color(0xFFB8BBC4),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "此頁暫不傳送模擬方向鍵，避免誤認為真正滑鼠。",
-                    color = Color(0xFF858994),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-    }
-}
