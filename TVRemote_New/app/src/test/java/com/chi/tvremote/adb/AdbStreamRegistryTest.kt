@@ -1,12 +1,11 @@
 package com.chi.tvremote.adb
 
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class AdbStreamRegistryTest {
     @Test
@@ -16,10 +15,13 @@ class AdbStreamRegistryTest {
         val second = registry.open()
         assertTrue(registry.dispatch(second.localId, AdbStreamRegistry.StreamPacket(3, 22, byteArrayOf(2))))
         assertTrue(registry.dispatch(first.localId, AdbStreamRegistry.StreamPacket(3, 11, byteArrayOf(1))))
-        assertEquals(11, first.take(100).remoteId)
-        assertEquals(1, first.takeOrPayloadNotUsed())
-        assertEquals(22, second.take(100).remoteId)
-        assertEquals(2, second.takePayloadFirstByte())
+
+        val firstPacket = first.take(100)
+        val secondPacket = second.take(100)
+        assertEquals(11, firstPacket.remoteId)
+        assertArrayEquals(byteArrayOf(1), firstPacket.payload)
+        assertEquals(22, secondPacket.remoteId)
+        assertArrayEquals(byteArrayOf(2), secondPacket.payload)
         assertEquals(2, registry.activeCount())
     }
 
@@ -37,7 +39,4 @@ class AdbStreamRegistryTest {
             // expected
         }
     }
-
-    private fun AdbStreamRegistry.Stream.takeOrPayloadNotUsed(): Int = 1
-    private fun AdbStreamRegistry.Stream.takePayloadFirstByte(): Int = 2
 }
