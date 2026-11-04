@@ -47,37 +47,53 @@ fun CircularDPad(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.size(236.dp).background(RemotePanel, CircleShape),
+        modifier = modifier
+            .size(340.dp)
+            .background(Color(0xFF353535), CircleShape)
+            .then(Modifier),
         contentAlignment = Alignment.Center
     ) {
-        Box(Modifier.align(Alignment.TopCenter).padding(top = 8.dp)) {
-            RepeatDirectionButton(Icons.Default.KeyboardArrowUp, "上", KeyCodes.DPAD_UP, enabled, repeatEnabled, onKey)
-        }
-        Row(
-            Modifier.align(Alignment.Center),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        Surface(
+            color = Color.Transparent,
+            shape = CircleShape,
+            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF8B5AA8)),
+            modifier = Modifier.fillMaxSize()
+        ) {}
+        Surface(
+            color = Color.Transparent,
+            shape = CircleShape,
+            border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF477DB5)),
+            modifier = Modifier.size(94.dp)
         ) {
-            RepeatDirectionButton(Icons.Default.KeyboardArrowLeft, "左", KeyCodes.DPAD_LEFT, enabled, repeatEnabled, onKey)
+            Box(contentAlignment = Alignment.Center) {
+                Box(Modifier.size(18.dp).background(Color(0xFF92979D), CircleShape))
+            }
+        }
+        @Composable
+        fun Direction(modifier: Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, code: Int) {
             Surface(
-                modifier = Modifier.size(88.dp).combinedClickable(
+                modifier = modifier.size(76.dp).combinedClickable(
                     enabled = enabled,
-                    onClick = { onKey(KeyCodes.DPAD_CENTER) },
-                    onLongClick = { onLongKey(KeyCodes.DPAD_CENTER) }
+                    onClick = { onKey(code) },
+                    onLongClick = { if (repeatEnabled) onLongKey(code) }
                 ),
-                shape = CircleShape,
-                color = Color(0xFF0C121B), contentColor = Color.White,
-                shadowElevation = 2.dp
+                color = Color.Transparent,
+                contentColor = if (enabled) Color.White else Color.White.copy(alpha = 0.3f),
+                shape = CircleShape
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("OK", style = MaterialTheme.typography.titleMedium, color = RemoteAccent)
+                    Icon(icon, contentDescription = label, modifier = Modifier.size(36.dp))
                 }
             }
-            RepeatDirectionButton(Icons.Default.KeyboardArrowRight, "右", KeyCodes.DPAD_RIGHT, enabled, repeatEnabled, onKey)
         }
-        Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)) {
-            RepeatDirectionButton(Icons.Default.KeyboardArrowDown, "下", KeyCodes.DPAD_DOWN, enabled, repeatEnabled, onKey)
-        }
+        Direction(Modifier.align(Alignment.TopCenter).padding(top = 22.dp), Icons.Default.KeyboardArrowUp, "上", KeyCodes.DPAD_UP)
+        Direction(Modifier.align(Alignment.CenterStart).padding(start = 22.dp), Icons.Default.KeyboardArrowLeft, "左", KeyCodes.DPAD_LEFT)
+        Direction(Modifier.align(Alignment.CenterEnd).padding(end = 22.dp), Icons.Default.KeyboardArrowRight, "右", KeyCodes.DPAD_RIGHT)
+        Direction(Modifier.align(Alignment.BottomCenter).padding(bottom = 22.dp), Icons.Default.KeyboardArrowDown, "下", KeyCodes.DPAD_DOWN)
+        Surface(
+            modifier = Modifier.size(76.dp).combinedClickable(enabled = enabled, onClick = { onKey(KeyCodes.DPAD_CENTER) }, onLongClick = { onLongKey(KeyCodes.DPAD_CENTER) }),
+            shape = CircleShape, color = Color.Transparent
+        ) {}
     }
 }
 
