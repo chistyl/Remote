@@ -8,11 +8,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.chi.tvremote"
+        applicationId = "com.chi.tvremote.next"
         minSdk = 21
         targetSdk = 34
-        versionCode = 25
-        versionName = "1.1.13"
+        versionCode = 26
+        versionName = "1.1.14"
     }
 
     buildTypes {
