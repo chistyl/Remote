@@ -3,7 +3,7 @@ name: TV Remote native build
 on:
   push:
     branches:
-      - "work/tvremote-v1.1.15-three-page-remote"
+      - "work/**"
     paths:
       - "TVRemote_New/**"
       - ".github/workflows/tvremote-native.yml"
