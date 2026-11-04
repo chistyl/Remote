@@ -1,5 +1,6 @@
 package com.chi.tvremote.audio
 
+import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -12,6 +13,10 @@ import kotlinx.coroutines.withContext
 
 /** Captures 8 kHz, 16-bit, mono PCM for Android TV Remote v2 voice sessions. */
 class VoiceRecorder {
+    // RemoteScreen requests RECORD_AUDIO at runtime before starting capture.
+    // Keep the annotation scoped to this recorder boundary; SecurityException is
+    // surfaced to the existing voice-status handler if permission is revoked.
+    @SuppressLint("MissingPermission")
     suspend fun capture(stopRequested: AtomicBoolean, onChunk: suspend (ByteArray) -> Unit) = withContext(Dispatchers.IO) {
         val sampleRate = 8_000
         val minBuffer = AudioRecord.getMinBufferSize(
