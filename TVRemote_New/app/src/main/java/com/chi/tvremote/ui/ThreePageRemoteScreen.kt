@@ -169,7 +169,8 @@ private fun MousePage(vm: RemoteViewModel) {
                                                 longPress = true
                                                 vm.sendScrcpyMouseReport(buttons = 1)
                                             }
-                                            val distanceSquared = delta.x * delta.x + delta.y * delta.y
+                                            val totalDelta = change.position - down.position
+                                            val distanceSquared = totalDelta.x * totalDelta.x + totalDelta.y * totalDelta.y
                                             if (!moved && distanceSquared > viewConfiguration.touchSlop * viewConfiguration.touchSlop) {
                                                 moved = true
                                             }
