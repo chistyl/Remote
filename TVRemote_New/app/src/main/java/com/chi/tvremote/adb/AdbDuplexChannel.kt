@@ -36,9 +36,12 @@ internal class AdbDuplexChannel(
                 throw IndexOutOfBoundsException()
             }
             if (length == 0) return 0
-            ensureInbound()
+            while (inboundOffset >= inbound.size && !peerClosed) {
+                ensureInbound()
+            }
             if (peerClosed) return -1
             val count = minOf(length, inbound.size - inboundOffset)
+            if (count == 0) return read(buffer, offset, length)
             System.arraycopy(inbound, inboundOffset, buffer, offset, count)
             inboundOffset += count
             if (inboundOffset == inbound.size) {
