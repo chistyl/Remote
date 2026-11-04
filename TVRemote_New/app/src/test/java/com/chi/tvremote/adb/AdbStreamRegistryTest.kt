@@ -26,6 +26,24 @@ class AdbStreamRegistryTest {
     }
 
     @Test
+    fun transportPacketsRouteUsingAdbArg1LocalId() {
+        val registry = AdbStreamRegistry()
+        val first = registry.open()
+        val second = registry.open()
+
+        val okay = 0x59414b4f
+        val write = 0x45545257
+        assertTrue(registry.dispatchTransportPacket(okay, 41, first.localId, byteArrayOf()))
+        assertTrue(registry.dispatchTransportPacket(write, 42, second.localId, byteArrayOf(9)))
+        assertEquals(41, first.take(100).remoteId)
+        val secondPacket = second.take(100)
+        assertEquals(42, secondPacket.remoteId)
+        assertArrayEquals(byteArrayOf(9), secondPacket.payload)
+        assertFalse(registry.dispatchTransportPacket(write, 1, 9999, byteArrayOf()))
+        assertFalse(registry.dispatchTransportPacket(0x12345678, 1, first.localId, byteArrayOf()))
+    }
+
+    @Test
     fun closeRemovesStreamAndRejectsFurtherPackets() {
         val registry = AdbStreamRegistry()
         val stream = registry.open()
