@@ -3,6 +3,7 @@ package com.chi.tvremote.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -145,6 +146,32 @@ private fun MousePage(vm: RemoteViewModel) {
                                 onDragCancel = { vm.sendScrcpyMouseReport(buttons = 0) }
                             )
                         }
+                        .pointerInput(vm) {
+                            awaitEachGesture {
+                                var previousY: Float? = null
+                                var scrollRemainder = 0f
+                                do {
+                                    val event = awaitPointerEvent()
+                                    val pressed = event.changes.filter { it.pressed }
+                                    if (pressed.size >= 2) {
+                                        val centerY = pressed.map { it.position.y }.average().toFloat()
+                                        val previous = previousY
+                                        if (previous != null) {
+                                            scrollRemainder += -(centerY - previous) / 24f
+                                            val wheel = scrollRemainder.toInt().coerceIn(-127, 127)
+                                            if (wheel != 0) {
+                                                vm.sendScrcpyMouseReport(wheel = wheel)
+                                                scrollRemainder -= wheel
+                                            }
+                                        }
+                                        previousY = centerY
+                                        pressed.forEach { it.consume() }
+                                    } else {
+                                        previousY = null
+                                    }
+                                } while (event.changes.any { it.pressed })
+                            }
+                        }
                         .clickable {
                             vm.sendScrcpyMouseReport(buttons = 1)
                             vm.sendScrcpyMouseReport(buttons = 0)
@@ -161,7 +188,7 @@ private fun MousePage(vm: RemoteViewModel) {
                         Spacer(Modifier.height(6.dp))
                         Text("滑動移動｜點一下左鍵｜長按後拖曳",
                             color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodySmall)
-                        Text("雙指上下滑動：捲動（下一階段加入）",
+                        Text("雙指上下滑動：捲動",
                             color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall)
                     }
                 }
