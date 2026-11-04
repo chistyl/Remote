@@ -102,15 +102,17 @@ private fun NumberPadPage(vm: RemoteViewModel) {
 
 @Composable
 private fun MousePage(vm: RemoteViewModel) {
-    val status by vm.adbProbeStatus.collectAsState()
-    val checking by vm.adbProbeRunning.collectAsState()
+    val adbStatus by vm.adbStatus.collectAsState()
+    val connecting by vm.adbConnecting.collectAsState()
+    val host by vm.host.collectAsState()
+    val ready by vm.remote.ready.collectAsState()
     Column(
         Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("滑鼠控制", color = Color.White, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
         Surface(
             color = Color(0xFF353535),
             shape = RoundedCornerShape(28.dp),
@@ -121,25 +123,35 @@ private fun MousePage(vm: RemoteViewModel) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.Mouse, contentDescription = null, tint = Color(0xFF8B78FF), modifier = Modifier.size(54.dp))
-                Spacer(Modifier.height(16.dp))
-                Text("滑鼠觸控區", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Text("先確認電視是否開啟 ADB 網路除錯",
-                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodyMedium)
+                Icon(Icons.Default.Mouse, contentDescription = null, tint = RemoteAccent, modifier = Modifier.size(54.dp))
                 Spacer(Modifier.height(14.dp))
-                Button(
-                    onClick = { vm.checkAdbTcpPort() },
-                    enabled = !checking,
-                    colors = ButtonDefaults.buttonColors(containerColor = RemoteAccent)
-                ) {
-                    Text(if (checking) "檢查中…" else "檢查 ADB 連線")
-                }
+                Text("ADB 裝置授權", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(8.dp))
+                Text(if (host.isBlank()) "請先在遙控器頁面選擇電視" else "目標電視：$host:5555",
+                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
-                Text(status, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(10.dp))
-                Text("檢查 TCP 5555 僅代表連接埠可連線，不等於 ADB 已授權；真正滑鼠仍需完成 ADB／虛擬 HID。",
-                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = { vm.connectAdb() },
+                        enabled = !connecting && host.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = RemoteAccent)
+                    ) { Text(if (connecting) "連線中…" else "連線／授權") }
+                    OutlinedButton(onClick = { vm.disconnectAdb() }, enabled = !connecting) {
+                        Text("中斷")
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(adbStatus, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "首次連線時，請確認電視畫面上的 ADB 授權提示。Android TV Remote 遙控連線與 ADB 授權是不同連線。",
+                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    if (ready) "遙控器已連線；滑鼠控制尚待虛擬 HID 驅動整合" else "請先完成電視配對與連線",
+                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
