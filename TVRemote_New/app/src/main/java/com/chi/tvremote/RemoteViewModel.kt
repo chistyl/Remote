@@ -129,7 +129,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                         scrcpyMouseChannel = null
                         val scid = ((System.currentTimeMillis() and 0x7fffffffL).toInt()).coerceAtLeast(1)
                         val scidHex = "%08x".format(java.util.Locale.ROOT, scid)
-                        val command = "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 5.0.1 scid=$scidHex log_level=info video=false audio=false control=true tunnel_forward=false send_dummy_byte=false cleanup=true >/dev/null 2>&1 &"
+                        val command = "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 5.0.1 scid=$scidHex log_level=info video=false audio=false control=true tunnel_forward=false send_dummy_byte=false send_device_meta=false send_stream_meta=false cleanup=true >/dev/null 2>&1 &"
                         transport.shell(command, timeoutMs = 10000)
                         val socketName = "scrcpy_$scidHex"
                         var channel: AdbDuplexChannel? = null
