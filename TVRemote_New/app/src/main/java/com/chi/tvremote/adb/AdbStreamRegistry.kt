@@ -59,6 +59,21 @@ internal class AdbStreamRegistry {
             true
         } ?: false
 
+    /**
+     * Routes protocol packets from the single socket reader. For A_OKAY,
+     * A_WRTE and A_CLSE, ADB places the host's local stream ID in arg1.
+     */
+    fun dispatchTransportPacket(
+        command: Int,
+        arg0: Int,
+        arg1: Int,
+        payload: ByteArray
+    ): Boolean {
+        if (arg1 <= 0) return false
+        if (command != A_OKAY && command != A_WRTE && command != A_CLSE) return false
+        return dispatch(arg1, StreamPacket(command, arg0, payload))
+    }
+
     fun close(localId: Int): Boolean {
         val stream = synchronized(lock) {
             val removed = streams.remove(localId) ?: return false
@@ -70,4 +85,10 @@ internal class AdbStreamRegistry {
     }
 
     fun activeCount(): Int = synchronized(lock) { streams.size }
+
+    private companion object {
+        const val A_OKAY = 0x59414b4f
+        const val A_WRTE = 0x45545257
+        const val A_CLSE = 0x45534c43
+    }
 }
