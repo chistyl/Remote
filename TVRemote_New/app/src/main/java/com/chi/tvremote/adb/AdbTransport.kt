@@ -107,10 +107,11 @@ class AdbTransport private constructor(
                 var publicKeySent = false
                 var authorizationRequested = false
                 val deadline = System.currentTimeMillis() + AUTH_TIMEOUT_MS
+                socket.soTimeout = AUTH_TIMEOUT_MS
                 while (System.currentTimeMillis() < deadline) {
-                    socket.soTimeout = minOf(1000L, (deadline - System.currentTimeMillis()).coerceAtLeast(1L)).toInt()
-                    val packet = try { transport.readPacket() } catch (_: java.net.SocketTimeoutException) {
-                        continue
+                    val packet = try { transport.readPacket() } catch (e: java.net.SocketTimeoutException) {
+                        val reason = if (publicKeySent) "等待電視確認 ADB 授權逾時" else "等待 ADB 電視回應逾時"
+                        throw IOException(reason, e)
                     }
                     when (packet.command) {
                         A_CNXN -> {
@@ -182,7 +183,6 @@ class AdbTransport private constructor(
             return Base64.getEncoder().encodeToString(buffer.array()) + " tvremote"
         }
 
-        private fun wordsBits() = BigInteger.ONE.shiftLeft(32)
         private fun wordsModulus() = BigInteger.ONE.shiftLeft(32)
         private fun toLittleEndian(value: BigInteger, size: Int): ByteArray {
             val big = value.toByteArray()
