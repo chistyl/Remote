@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.SocketTimeoutException
 
 /**
  * ADB logical stream adapted to independent blocking input/output streams.
@@ -16,6 +15,7 @@ internal class AdbDuplexChannel(
     private val remoteId: Int,
     private val maxPayload: Int,
     private val readPacket: (Long) -> AdbStreamRegistry.StreamPacket,
+    private val readAck: (Long) -> AdbStreamRegistry.StreamPacket,
     private val writePacket: (Int, Int, Int, ByteArray) -> Unit,
     private val closeStream: (Int, Int) -> Unit
 ) : Closeable {
@@ -95,23 +95,10 @@ internal class AdbDuplexChannel(
     }
 
     private fun awaitWriteAck() {
-        val packet = readAck()
+        val packet = readAck(DEFAULT_TIMEOUT_MS)
         if (packet.command != A_OKAY || packet.remoteId != remoteId) {
             throw IOException("ADB localabstract 傳送 ACK 不符")
         }
-    }
-
-    private fun readAck(): AdbStreamRegistry.StreamPacket {
-        // The stream registry exposes ACKs through the same callback only at open;
-        // the duplex channel receives its ACK waiter separately below.
-        return ackReader?.invoke(DEFAULT_TIMEOUT_MS)
-            ?: throw IOException("ADB localabstract ACK 接收器未設定")
-    }
-
-    private var ackReader: ((Long) -> AdbStreamRegistry.StreamPacket)? = null
-
-    internal fun setAckReader(reader: (Long) -> AdbStreamRegistry.StreamPacket) {
-        ackReader = reader
     }
 
     private fun checkOpen() {
