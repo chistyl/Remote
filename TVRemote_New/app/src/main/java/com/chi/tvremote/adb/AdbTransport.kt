@@ -126,7 +126,7 @@ class AdbTransport private constructor(
      * to independent queues, so a reader can never consume a writer's ACK.
      */
     @Throws(IOException::class)
-    fun openLocalAbstract(name: String, timeoutMs: Int = 10000): AdbDuplexChannel {
+    internal fun openLocalAbstract(name: String, timeoutMs: Int = 10000): AdbDuplexChannel {
         if (!connected) throw IOException("ADB 尚未連線")
         require(name.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) { "localabstract 名稱不合法" }
         require(timeoutMs > 0) { "timeoutMs 必須大於 0" }
