@@ -129,9 +129,10 @@ class AdbTransport private constructor(
          * On first use Android TV displays its own "Allow USB debugging?" dialog.
          */
         @Throws(IOException::class)
-        fun connect(filesDir: File, host: String, port: Int = 5555): ConnectResult {
+        fun connect(filesDir: File, host: String, port: Int = 5555, onSocketCreated: (Socket) -> Unit = {}): ConnectResult {
             require(host.isNotBlank()) { "電視 IP 不可空白" }
             val socket = Socket()
+            onSocketCreated(socket)
             try {
                 socket.tcpNoDelay = true
                 socket.connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
