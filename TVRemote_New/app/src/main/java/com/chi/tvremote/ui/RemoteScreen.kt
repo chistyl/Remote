@@ -189,13 +189,31 @@ fun RemoteScreen(vm: RemoteViewModel) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = textMode == 0,
-                onClick = { textMode = 0; lastRealtimeText = textValue.text },
+                onClick = {
+                    textMode = 0
+                    val initialText = textValue.text
+                    if (initialText.isNotEmpty() && textValue.composition == null) {
+                        lastRealtimeText = initialText
+                        vm.sendRealtimeTextDelta("", initialText) { sent ->
+                            if (!sent) textStatus = t("text_sync_failed")
+                        }
+                    } else {
+                        lastRealtimeText = ""
+                    }
+                },
                 label = { Text(t("text_mode_realtime")) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
                 selected = textMode == 1,
-                onClick = { textMode = 1 },
+                onClick = {
+                    if (lastRealtimeText.isNotEmpty()) {
+                        vm.sendRealtimeTextDelta(lastRealtimeText, "")
+                        lastRealtimeText = ""
+                    }
+                    textValue = TextFieldValue("")
+                    textMode = 1
+                },
                 label = { Text(t("text_mode_batch")) },
                 modifier = Modifier.weight(1f)
             )
@@ -282,7 +300,14 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 ) { Text(t("send_text")) }
             } else {
                 OutlinedButton(
-                    onClick = { textValue = TextFieldValue(""); lastRealtimeText = "" },
+                    onClick = {
+                        val previouslySynced = lastRealtimeText
+                        if (previouslySynced.isNotEmpty()) {
+                            vm.sendRealtimeTextDelta(previouslySynced, "")
+                        }
+                        textValue = TextFieldValue("")
+                        lastRealtimeText = ""
+                    },
                     enabled = textValue.text.isNotEmpty(),
                     modifier = Modifier.weight(1f)
                 ) { Text(t("text_clear")) }
