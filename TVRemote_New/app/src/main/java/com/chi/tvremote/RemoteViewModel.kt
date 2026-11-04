@@ -15,6 +15,10 @@ import com.chi.tvremote.protocol.TlsFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.InetSocketAddress
+import java.net.Socket
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +31,41 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     val pairing = PairingClient(certs, tls)
     val remote = RemoteClient(tls)
     private val textEditMutex = Mutex()
+
+    private val _adbProbeStatus = MutableStateFlow("尚未檢查")
+    val adbProbeStatus: StateFlow<String> = _adbProbeStatus.asStateFlow()
+    private val _adbProbeRunning = MutableStateFlow(false)
+    val adbProbeRunning: StateFlow<Boolean> = _adbProbeRunning.asStateFlow()
+
+    /** Checks whether the selected TV exposes the classic ADB TCP port. This does not authenticate or start ADB. */
+    fun checkAdbTcpPort() {
+        val address = _host.value.trim()
+        if (address.isBlank()) {
+            _adbProbeStatus.value = "請先選擇或連線電視"
+            return
+        }
+        if (_adbProbeRunning.value) return
+        viewModelScope.launch {
+            _adbProbeRunning.value = true
+            _adbProbeStatus.value = "正在檢查 $address:5555…"
+            val reachable = withContext(Dispatchers.IO) {
+                try {
+                    Socket().use { socket ->
+                        socket.connect(InetSocketAddress(address, 5555), 1800)
+                    }
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+            }
+            _adbProbeStatus.value = if (reachable) {
+                "TCP 5555 可連線；尚需確認 ADB 授權與裝置相容性"
+            } else {
+                "無法連線 TCP 5555；請確認電視已開啟 ADB 網路除錯，且手機與電視在同一網路"
+            }
+            _adbProbeRunning.value = false
+        }
+    }
 
     private val _language = MutableStateFlow(prefs.getString("language", "zh-TW") ?: "zh-TW")
     val language: StateFlow<String> = _language
