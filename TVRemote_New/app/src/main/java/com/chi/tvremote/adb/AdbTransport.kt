@@ -38,8 +38,14 @@ class AdbTransport private constructor(
     var connected: Boolean = true
         private set
 
+    @Volatile
+    private var peerMaxPayload: Int = MAX_PAYLOAD
+
     @Synchronized
     private fun writePacket(command: Int, arg0: Int, arg1: Int, payload: ByteArray) {
+        if (payload.size > peerMaxPayload) {
+            throw IOException("ADB 封包超過電視允許上限：${payload.size}/$peerMaxPayload")
+        }
         output.write(AdbPacketCodec.encode(command, arg0, arg1, payload))
         output.flush()
     }
@@ -146,6 +152,9 @@ class AdbTransport private constructor(
                     }
                     when (packet.command) {
                         A_CNXN -> {
+                            // CNXN.arg1 is the peer's maximum transport payload size.
+                            // Clamp defensively to our local packet decoder limit.
+                            transport.peerMaxPayload = packet.arg1.coerceIn(1024, MAX_PAYLOAD)
                             socket.soTimeout = 0
                             return ConnectResult(transport, authorizationRequested)
                         }
