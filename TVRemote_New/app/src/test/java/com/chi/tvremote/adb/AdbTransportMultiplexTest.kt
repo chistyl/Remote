@@ -61,6 +61,52 @@ class AdbTransportMultiplexTest {
         }
     }
 
+    @Test
+    fun shellAcknowledgesEachWriteBeforePeerClosesStream() {
+        val server = ServerSocket(0)
+        val executor = Executors.newSingleThreadExecutor()
+        val serverResult = executor.submit(Callable {
+            server.accept().use { peer ->
+                peer.soTimeout = 5000
+                val input = DataInputStream(peer.getInputStream())
+                val output = DataOutputStream(peer.getOutputStream())
+                val open = readPacket(input)
+                assertEquals(A_OPEN, open.command)
+
+                val remoteId = 701
+                output.write(AdbPacketCodec.encode(A_OKAY, remoteId, open.arg0, byteArrayOf()))
+                output.write(AdbPacketCodec.encode(A_WRTE, remoteId, open.arg0, "flow-controlled".toByteArray()))
+                output.flush()
+
+                // The peer waits for the host's WRTE acknowledgement before closing.
+                val ack = readPacket(input)
+                assertEquals(A_OKAY, ack.command)
+                assertEquals(open.arg0, ack.arg0)
+                assertEquals(remoteId, ack.arg1)
+                assertEquals(0, ack.payload.size)
+
+                output.write(AdbPacketCodec.encode(A_CLSE, remoteId, open.arg0, byteArrayOf()))
+                output.flush()
+                val closeAck = readPacket(input)
+                assertEquals(A_CLSE, closeAck.command)
+                assertEquals(open.arg0, closeAck.arg0)
+                assertEquals(remoteId, closeAck.arg1)
+                true
+            }
+        })
+
+        val clientSocket = Socket("127.0.0.1", server.localPort)
+        val transport = AdbTransport.fromConnectedSocketForTest(clientSocket)
+        try {
+            assertEquals("flow-controlled", transport.shell("echo flow", 5000))
+            assertTrue(serverResult.get(2, TimeUnit.SECONDS))
+        } finally {
+            transport.close()
+            executor.shutdownNow()
+            server.close()
+        }
+    }
+
     private data class Frame(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
 
     private fun readPacket(input: DataInputStream): Frame {
