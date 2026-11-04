@@ -48,19 +48,12 @@ class AdbTransport private constructor(
         val header = ByteArray(24)
         input.readFully(header)
         val fields = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
-        val command = fields.int
-        val arg0 = fields.int
-        val arg1 = fields.int
-        val length = fields.int
-        val checksum = fields.int
-        val magic = fields.int
-        if (magic != (command xor -1)) throw IOException("ADB 封包標記錯誤")
+        val length = fields.getInt(12)
         if (length < 0 || length > MAX_PAYLOAD) throw IOException("ADB 封包長度不合法：$length")
         val payload = ByteArray(length)
         input.readFully(payload)
-        val actual = payload.fold(0L) { sum, byte -> sum + (byte.toInt() and 0xff) }.toInt()
-        if (actual != checksum) throw IOException("ADB 封包 checksum 錯誤")
-        return Packet(command, arg0, arg1, payload)
+        val decoded = AdbPacketCodec.decode(header, payload, MAX_PAYLOAD)
+        return Packet(decoded.command, decoded.arg0, decoded.arg1, decoded.payload)
     }
 
     @Synchronized
