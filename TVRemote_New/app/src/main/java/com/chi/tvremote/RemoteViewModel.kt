@@ -20,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicReference
+import java.net.Socket
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +38,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     private var adbTransport: AdbTransport? = null
     private val adbMutex = Mutex()
     @Volatile private var adbGeneration = 0L
+    private val adbPendingSocket = AtomicReference<Socket?>(null)
     private val _adbStatus = MutableStateFlow("尚未授權")
     val adbStatus: StateFlow<String> = _adbStatus.asStateFlow()
     private val _adbConnecting = MutableStateFlow(false)
@@ -55,10 +58,14 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                     adbMutex.withLock {
                         adbTransport?.close()
                         adbTransport = null
-                        AdbTransport.connect(getApplication<Application>().filesDir, address)
+                        AdbTransport.connect(getApplication<Application>().filesDir, address) { socket ->
+                            adbPendingSocket.set(socket)
+                            if (generation != adbGeneration) socket.close()
+                        }
                     }
                 }
                 adbMutex.withLock {
+                    adbPendingSocket.set(null)
                     if (generation == adbGeneration) adbTransport = result.transport
                     else result.transport.close()
                 }
@@ -75,6 +82,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     fun disconnectAdb() {
         ++adbGeneration
+        try { adbPendingSocket.getAndSet(null)?.close() } catch (_: Exception) {}
         viewModelScope.launch(Dispatchers.IO) {
             adbMutex.withLock {
                 try { adbTransport?.close() } catch (_: Exception) {}
