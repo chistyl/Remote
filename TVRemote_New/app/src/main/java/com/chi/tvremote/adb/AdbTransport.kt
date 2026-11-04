@@ -132,8 +132,8 @@ class AdbTransport private constructor(
         fun connect(filesDir: File, host: String, port: Int = 5555, onSocketCreated: (Socket) -> Unit = {}): ConnectResult {
             require(host.isNotBlank()) { "電視 IP 不可空白" }
             val socket = Socket()
-            onSocketCreated(socket)
             try {
+                onSocketCreated(socket)
                 socket.tcpNoDelay = true
                 socket.connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
                 socket.soTimeout = CONNECT_TIMEOUT_MS
