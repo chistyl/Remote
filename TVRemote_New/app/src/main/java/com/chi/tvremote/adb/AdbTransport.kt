@@ -145,6 +145,26 @@ class AdbTransport private constructor(
         private const val CONNECT_TIMEOUT_MS = 4000
         private const val AUTH_TIMEOUT_MS = 120000
 
+        /** Internal socket factory for protocol-level tests; production uses connect(). */
+        internal fun fromConnectedSocketForTest(socket: Socket, maxPayload: Int = MAX_PAYLOAD): AdbTransport {
+            val transport = AdbTransport(
+                socket,
+                DataInputStream(socket.getInputStream()),
+                DataOutputStream(socket.getOutputStream())
+            )
+            transport.peerMaxPayload = maxPayload.coerceIn(1024, MAX_PAYLOAD)
+            transport.readerPump = AdbPacketReaderPump(
+                socket.getInputStream(),
+                transport.streamRegistry,
+                { error ->
+                    transport.connected = false
+                    try { socket.close() } catch (_: Exception) { }
+                },
+                { transport.peerMaxPayload }
+            ).also { it.start() }
+            return transport
+        }
+
         /**
          * Connects to a TV exposing legacy ADB TCP (normally port 5555).
          * On first use Android TV displays its own "Allow USB debugging?" dialog.
