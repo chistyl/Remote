@@ -1,4 +1,5 @@
 name: TV Remote native build
+# Validate ADB transport foundation changes on the dedicated work branch.
 
 on:
   push:
