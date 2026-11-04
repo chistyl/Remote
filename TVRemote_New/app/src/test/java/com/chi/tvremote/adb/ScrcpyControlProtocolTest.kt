@@ -30,6 +30,25 @@ class ScrcpyControlProtocolTest {
         )
     }
 
+    @Test fun officialMouseDescriptorAndRelativeReportAreEncoded() {
+        val create = ScrcpyControlProtocol.mouseUhidCreate()
+        assertEquals(ScrcpyControlProtocol.TYPE_UHID_CREATE, create[0].toInt())
+        assertEquals(ScrcpyControlProtocol.HID_ID_MOUSE, ((create[1].toInt() and 0xff) shl 8) or (create[2].toInt() and 0xff))
+        assertEquals("scrcpy".length, create[7].toInt() and 0xff)
+        assertEquals(ScrcpyControlProtocol.HID_MOUSE_REPORT_DESCRIPTOR.size, create[14].toInt() shl 8 or (create[15].toInt() and 0xff))
+
+        val report = ScrcpyControlProtocol.mouseUhidInput(
+            buttons = 1, relativeX = -12, relativeY = 34,
+            verticalScroll = -1, horizontalScroll = 2
+        )
+        assertArrayEquals(byteArrayOf(13, 0, 2, 0, 5, 1, -12, 34, -1, 2), report)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun mouseRelativeReportRejectsOutOfRangeMovement() {
+        ScrcpyControlProtocol.mouseUhidInput(relativeX = 128)
+    }
+
     @Test fun touchMessageEncodesCoordinatesAndDisplaySize() {
         val bytes = ScrcpyControlProtocol.injectTouch(
             action = ScrcpyControlProtocol.ACTION_HOVER_MOVE,
