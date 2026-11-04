@@ -44,10 +44,9 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     /** Authenticates with classic ADB TCP. This is separate from Android TV Remote pairing. */
     fun connectAdb() {
         val address = _host.value.trim()
-        if (address.isBlank() || _adbConnecting.value) {
-            if (address.isBlank()) _adbStatus.value = "請先選擇電視"
-            return
-        }
+        if (address.isBlank()) { _adbStatus.value = "請先選擇電視"; return }
+        if (_adbConnecting.value) return
+        val generation = ++adbGeneration
         viewModelScope.launch {
             _adbConnecting.value = true
             _adbStatus.value = "正在連線並等待電視授權…"
@@ -59,30 +58,32 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                         AdbTransport.connect(getApplication<Application>().filesDir, address)
                     }
                 }
-                adbTransport = result.transport
-                _adbStatus.value = if (result.authorizationRequested) {
-                    "已收到電視端 ADB 授權回應"
-                } else {
-                    "ADB 已連線"
+                adbMutex.withLock {
+                    if (generation == adbGeneration) adbTransport = result.transport
+                    else result.transport.close()
+                }
+                if (generation == adbGeneration) {
+                    _adbStatus.value = if (result.authorizationRequested) "ADB 已授權連線" else "ADB 已連線"
                 }
             } catch (e: Exception) {
-                _adbStatus.value = e.message ?: "ADB 連線失敗"
+                if (generation == adbGeneration) _adbStatus.value = e.message ?: "ADB 連線失敗"
             } finally {
-                _adbConnecting.value = false
+                if (generation == adbGeneration) _adbConnecting.value = false
             }
         }
     }
 
     fun disconnectAdb() {
+        ++adbGeneration
         viewModelScope.launch(Dispatchers.IO) {
             adbMutex.withLock {
                 try { adbTransport?.close() } catch (_: Exception) {}
                 adbTransport = null
             }
+            _adbConnecting.value = false
             _adbStatus.value = "ADB 已中斷"
         }
     }
-
     /** Runs a diagnostic shell command only after successful ADB authorization. */
     fun runAdbDiagnostic(command: String, onResult: (String?) -> Unit = {}) {
         viewModelScope.launch {
