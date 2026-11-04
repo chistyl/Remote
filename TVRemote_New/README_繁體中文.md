@@ -1,4 +1,4 @@
-# TV Remote v1.1.11（Remote ATV 5.0.5 操作對齊版）
+# TV Remote v1.1.12（Remote ATV 5.0.5 操作對齊版）
 
 > 本專案為 Kotlin + Jetpack Compose 重建版本，並非原 Flutter APK 的原始碼。
 
@@ -101,3 +101,11 @@ APK 預期輸出：`app/build/outputs/apk/debug/app-debug.apk`
 ### CI 啟動修正
 - 將 v1.1.11 專用 GitHub Actions 工作流程同步放到預設分支，確保 GitHub 能辨識並允許此工作流程執行。
 - 本次文件提交用來重新觸發原生 Android 測試與 APK 建置；不變更 APP 功能。
+
+
+## v1.1.12 工作分支更新
+- 本版本以 v1.1.11 原生重建版本為基礎，保留既有配對、連線、方向鍵、音量、文字輸入及觸控板操作。
+- 版本號更新為 versionCode 24、versionName 1.1.12。
+- 觸控板手勢維持以 DPAD 方向／確認事件操作，不宣稱支援真正滑鼠游標座標注入。
+- 建置工作流程支援本工作分支，並分別上傳 Debug APK 與完整原始碼 ZIP。
+- Android 9 電視實機配對與長時間連續操作仍需實機驗收。
