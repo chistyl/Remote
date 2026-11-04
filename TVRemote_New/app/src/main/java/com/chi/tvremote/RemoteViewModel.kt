@@ -246,12 +246,12 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                         added.isEmpty() || remote.sendText(added)
                     }
                     previous.startsWith(current) -> {
-                        val removed = previous.length - current.length
+                        val removed = previous.codePointCount(0, previous.length) - current.codePointCount(0, current.length)
                         repeat(removed) { remote.sendKey(com.chi.tvremote.protocol.KeyCodes.DEL) }
                         true
                     }
                     else -> {
-                        repeat(previous.length) { remote.sendKey(com.chi.tvremote.protocol.KeyCodes.DEL) }
+                        repeat(previous.codePointCount(0, previous.length)) { remote.sendKey(com.chi.tvremote.protocol.KeyCodes.DEL) }
                         current.isEmpty() || remote.sendText(current)
                     }
                 }
