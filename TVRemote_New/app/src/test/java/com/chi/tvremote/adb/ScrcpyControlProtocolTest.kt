@@ -58,8 +58,8 @@ class ScrcpyControlProtocolTest {
         buffer.int
         buffer.short
         buffer.short
-        assertEquals(-2047, buffer.short.toInt())
-        assertEquals(4095, buffer.short.toInt())
+        assertEquals(-2048, buffer.short.toInt())
+        assertEquals(4096, buffer.short.toInt())
     }
 
     @Test(expected = IllegalArgumentException::class)
