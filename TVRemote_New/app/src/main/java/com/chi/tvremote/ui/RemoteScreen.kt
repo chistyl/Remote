@@ -5,6 +5,9 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -16,8 +19,6 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.SettingsInputHdmi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -117,26 +118,15 @@ fun RemoteScreen(vm: RemoteViewModel) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            RemoteActionButton(t("back"), Icons.Default.ArrowBack, ready, { vm.sendKey(KeyCodes.BACK) }, Modifier.weight(1f))
-            RemoteActionButton(
-                t("home"), Icons.Default.Home, ready, { vm.sendKey(KeyCodes.HOME) },
-                Modifier.weight(1f), onLongClick = { vm.sendLongKey(KeyCodes.HOME) }
-            )
-            RemoteActionButton(t("menu"), Icons.Default.Menu, ready, { vm.sendKey(KeyCodes.MENU) }, Modifier.weight(1f))
-            RemoteActionButton(t("input_source"), Icons.Default.SettingsInputHdmi, ready, { vm.sendKey(KeyCodes.TV_INPUT) }, Modifier.weight(1f))
-            RemoteActionButton(t("power"), Icons.Default.PowerSettingsNew, ready, { vm.sendKey(KeyCodes.POWER) }, Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            ReferenceCircleAction("⏮", ready) { vm.sendKey(KeyCodes.MEDIA_PREV) }
+            ReferenceCircleAction("◀◀", ready) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
+            ReferenceCircleAction("▶Ⅱ", ready) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
+            ReferenceCircleAction("▶▶", ready) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
+            ReferenceCircleAction("⏭", ready) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(
-                onClick = { if (transportConnected) vm.disconnect() else vm.connect() },
-                modifier = Modifier.weight(1f).height(44.dp)
-            ) { Text(if (transportConnected) t("disconnect") else t("connect_tv")) }
-            Text(
-                if (ready) t("connected") else if (transportConnected) t("connecting") else t("disconnected"),
-                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                style = MaterialTheme.typography.labelMedium
-            )
+        if (!ready) {
+            Text(if (transportConnected) t("connecting") else t("disconnected"), color = Color(0xFFB7B7B7), style = MaterialTheme.typography.labelSmall)
         }
         if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error)
         powerOn?.let { Text(if (it) t("tv_power_on") else t("tv_power_off"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -186,19 +176,37 @@ fun RemoteScreen(vm: RemoteViewModel) {
             TouchpadControl(vm)
         }
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            RepeatActionButton(t("volume_down"), Modifier.weight(1f), ready, repeatEnabled) { vm.sendKey(KeyCodes.VOLUME_DOWN) }
-            KeyButton(t("mute"), Modifier.weight(1f), ready) { vm.sendKey(KeyCodes.VOLUME_MUTE) }
-            RepeatActionButton(t("volume_up"), Modifier.weight(1f), ready, repeatEnabled) { vm.sendKey(KeyCodes.VOLUME_UP) }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KeyButton(t("previous"), Modifier.weight(1f), ready) { vm.sendKey(KeyCodes.MEDIA_PREV) }
-            KeyButton(t("play_pause"), Modifier.weight(1f), ready) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
-            KeyButton(t("next"), Modifier.weight(1f), ready) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            RepeatActionButton(t("channel_down"), Modifier.weight(1f), ready, repeatEnabled) { vm.sendKey(KeyCodes.CHANNEL_DOWN) }
-            RepeatActionButton(t("channel_up"), Modifier.weight(1f), ready, repeatEnabled) { vm.sendKey(KeyCodes.CHANNEL_UP) }
+        Row(Modifier.fillMaxWidth().height(150.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier.width(62.dp).fillMaxHeight().background(Color(0xFF353535), RoundedCornerShape(34.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text("+", color = Color.White, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.clickable { if (ready) vm.sendKey(KeyCodes.VOLUME_UP) })
+                Text("音量", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                Text("−", color = Color.White, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.clickable { if (ready) vm.sendKey(KeyCodes.VOLUME_DOWN) })
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ReferenceCircleAction("⌨", ready, Modifier.weight(1f)) { focusRequester.requestFocus(); keyboardController?.show() }
+                    ReferenceCircleAction("⌂", ready, Modifier.weight(1f)) { vm.sendKey(KeyCodes.HOME) }
+                    ReferenceCircleAction("✥", ready, Modifier.weight(1f)) { vm.setRemoteControlMode(if (controlMode == 0) 1 else 0) }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ReferenceCircleAction("☰", ready, Modifier.weight(1f)) { vm.sendKey(KeyCodes.MENU) }
+                    ReferenceCircleAction("◀×", ready, Modifier.weight(1f)) { vm.sendKey(KeyCodes.VOLUME_MUTE) }
+                    ReferenceCircleAction("↶", ready, Modifier.weight(1f)) { vm.sendKey(KeyCodes.BACK) }
+                }
+            }
+            Column(
+                Modifier.width(62.dp).fillMaxHeight().background(Color(0xFF353535), RoundedCornerShape(34.dp)),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text("⌃", color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.clickable { if (ready) vm.sendKey(KeyCodes.CHANNEL_UP) })
+                Text("CH", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                Text("⌄", color = Color.White, style = MaterialTheme.typography.titleLarge, modifier = Modifier.clickable { if (ready) vm.sendKey(KeyCodes.CHANNEL_DOWN) })
+            }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -345,4 +353,21 @@ fun RemoteScreen(vm: RemoteViewModel) {
 private fun KeyButton(label: String, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
     OutlinedButton(onClick = onClick, modifier = modifier.height(46.dp), enabled = enabled,
         shape = RoundedCornerShape(14.dp)) { Text(label) }
+}
+
+
+@Composable
+private fun ReferenceCircleAction(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.aspectRatio(1f),
+        shape = androidx.compose.foundation.shape.CircleShape,
+        color = Color(0xFF353535),
+        contentColor = Color.White
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(label, style = MaterialTheme.typography.headlineSmall, color = Color.White)
+        }
+    }
 }
