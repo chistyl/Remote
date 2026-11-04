@@ -9,7 +9,7 @@ class PairingProtocolTest {
         val bytes = PairingProtocol.envelope(10, PairingProtocol.request("CHI TV Remote"))
         assertEquals(2L, ProtoCodec.firstVarintField(bytes, 1))
         assertEquals(200L, ProtoCodec.firstVarintField(bytes, 2))
-        assertEquals(-1L, ProtoCodec.firstVarintField(bytes, 3))
+        assertEquals(10L, ProtoCodec.firstVarintField(bytes, 3))
         assertEquals(true, PairingProtocol.parseAck(bytes).hasMessage(10))
     }
 
@@ -21,14 +21,13 @@ class PairingProtocolTest {
     }
 
     @Test fun parsesSuccessfulAckAndRejectsNon200Status() {
-        val ok = ProtoCodec.varintField(1, 2) +
-            ProtoCodec.varintField(2, 200) +
-            ProtoCodec.messageField(11, byteArrayOf())
+        val ok = PairingProtocol.envelope(11, byteArrayOf())
         assertEquals(true, PairingProtocol.parseAck(ok).hasMessage(11))
 
         val rejected = ProtoCodec.varintField(1, 2) +
             ProtoCodec.varintField(2, 400) +
-            ProtoCodec.messageField(11, byteArrayOf())
+            ProtoCodec.varintField(3, 11) +
+            ProtoCodec.bytesField(4, byteArrayOf())
         assertThrows(IllegalArgumentException::class.java) { PairingProtocol.parseAck(rejected) }
     }
 
