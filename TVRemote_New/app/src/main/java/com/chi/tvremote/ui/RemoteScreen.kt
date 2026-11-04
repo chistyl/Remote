@@ -73,20 +73,20 @@ fun RemoteScreen(vm: RemoteViewModel) {
         if (voiceJob?.isActive == true || !ready || !voiceSupported) return
         stopVoice.set(false)
         voiceRecording = true
-        voiceStatus = t("voice_connecting")
+        voiceStatus = voiceConnectingLabel
         voiceJob = scope.launch {
             var sessionId: Int? = null
             try {
                 val activeSession = vm.remote.beginVoice()
                 sessionId = activeSession
-                voiceStatus = t("voice_listening")
+                voiceStatus = voiceListeningLabel
                 VoiceRecorder().capture(stopVoice) { chunk ->
                     vm.remote.sendVoiceChunk(activeSession, chunk)
                 }
-                voiceStatus = t("voice_done")
+                voiceStatus = voiceDoneLabel
             } catch (failure: Throwable) {
                 if (failure !is kotlinx.coroutines.CancellationException) {
-                    voiceStatus = failure.message?.takeIf { it.isNotBlank() } ?: t("voice_failed")
+                    voiceStatus = failure.message?.takeIf { it.isNotBlank() } ?: voiceFailedLabel
                 }
             } finally {
                 sessionId?.let { id -> runCatching { vm.remote.endVoice(id) } }
@@ -98,7 +98,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
     val microphonePermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) startVoiceCapture() else voiceStatus = t("mic_permission")
+        if (granted) startVoiceCapture() else voiceStatus = micPermissionLabel
     }
 
     DisposableEffect(Unit) {
@@ -194,7 +194,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = {
                 vm.sendText(textToSend) { sent ->
-                    textStatus = if (sent) t("text_sent") else t("text_failed")
+                    textStatus = if (sent) textSentLabel else textFailedLabel
                     if (sent) textToSend = ""
                 }
             })
@@ -217,7 +217,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     if (voiceRecording) {
                         stopVoice.set(true)
                     } else if (!voiceSupported) {
-                        voiceStatus = t("voice_not_supported")
+                        voiceStatus = voiceNotSupportedLabel
                     } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                         startVoiceCapture()
                     } else {
@@ -236,7 +236,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             Button(
                 onClick = {
                     vm.sendText(textToSend) { sent ->
-                        textStatus = if (sent) t("text_sent") else t("text_failed")
+                        textStatus = if (sent) textSentLabel else textFailedLabel
                         if (sent) textToSend = ""
                     }
                 },
