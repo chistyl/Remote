@@ -99,8 +99,14 @@ class AdbTransport private constructor(
             }
             return result.toString("UTF-8").replace("\r\n", "\n").trim()
         } catch (e: java.net.SocketTimeoutException) {
-            throw IOException("ADB Shell 指令逾時", e)
-        } finally { socket.soTimeout = 0 }
+            close()
+            throw IOException("ADB Shell 指令逾時，已中斷失效連線", e)
+        } catch (e: IOException) {
+            close()
+            throw e
+        } finally {
+            try { if (!socket.isClosed) socket.soTimeout = 0 } catch (_: Exception) {}
+        }
     }
 
     override fun close() {
