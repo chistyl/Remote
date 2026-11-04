@@ -38,6 +38,8 @@ class AdbTransport private constructor(
     var connected: Boolean = true
         private set
 
+    private data class Packet(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
+
     @Volatile
     private var peerMaxPayload: Int = MAX_PAYLOAD
 
