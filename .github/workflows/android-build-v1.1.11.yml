@@ -3,7 +3,7 @@ name: TV Remote v1.1.13 native build
 on:
   workflow_dispatch:
   push:
-    branches: [ work/tvremote-v1.1.11-native, work/tvremote-v1.1.13-five-features ]
+    branches: [ work/tvremote-v1.1.13-native-keyboard ]
     paths:
       - 'TVRemote_New/**'
       - '.github/workflows/android-build-v1.1.11.yml'
