@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.chi.tvremote.RemoteViewModel
@@ -45,7 +46,9 @@ fun RemoteScreen(vm: RemoteViewModel) {
     val volumeInfo by vm.remote.volumeInfo.collectAsState()
     val powerOn by vm.remote.powerOn.collectAsState()
     val voiceSupported by vm.remote.voiceSupported.collectAsState()
-    var textToSend by remember { mutableStateOf("") }
+    var textValue by remember { mutableStateOf(TextFieldValue("")) }
+    var textMode by remember { mutableIntStateOf(0) } // 0 = live sync, 1 = send whole text
+    var lastRealtimeText by remember { mutableStateOf("") }
     var textStatus by remember { mutableStateOf<String?>(null) }
     var voiceStatus by remember { mutableStateOf<String?>(null) }
     var voiceRecording by remember { mutableStateOf(false) }
@@ -183,9 +186,38 @@ fun RemoteScreen(vm: RemoteViewModel) {
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Text(t("text_input"), style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = textMode == 0,
+                onClick = { textMode = 0; lastRealtimeText = textValue.text },
+                label = { Text(t("text_mode_realtime")) },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = textMode == 1,
+                onClick = { textMode = 1 },
+                label = { Text(t("text_mode_batch")) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Text(
+            if (textMode == 0) t("text_realtime_hint") else t("text_input_hint"),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         OutlinedTextField(
-            value = textToSend,
-            onValueChange = { textToSend = it; textStatus = null },
+            value = textValue,
+            onValueChange = { updated ->
+                val previous = lastRealtimeText
+                textValue = updated
+                textStatus = null
+                if (textMode == 0 && updated.composition == null && updated.text != previous) {
+                    lastRealtimeText = updated.text
+                    vm.sendRealtimeTextDelta(previous, updated.text) { sent ->
+                        if (!sent) textStatus = t("text_sync_failed")
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             placeholder = { Text(t("text_placeholder")) },
             singleLine = true,
@@ -193,9 +225,13 @@ fun RemoteScreen(vm: RemoteViewModel) {
             shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = {
-                vm.sendText(textToSend) { sent ->
-                    textStatus = if (sent) textSentLabel else textFailedLabel
-                    if (sent) textToSend = ""
+                if (textMode == 1) {
+                    vm.sendText(textValue.text) { sent ->
+                        textStatus = if (sent) textSentLabel else textFailedLabel
+                        if (sent) textValue = TextFieldValue("")
+                    }
+                } else {
+                    keyboardController?.hide()
                 }
             })
         )
@@ -233,16 +269,24 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                onClick = {
-                    vm.sendText(textToSend) { sent ->
-                        textStatus = if (sent) textSentLabel else textFailedLabel
-                        if (sent) textToSend = ""
-                    }
-                },
-                enabled = ready && textToSend.isNotEmpty() && textInputReady,
-                modifier = Modifier.weight(1f)
-            ) { Text(t("send_text")) }
+            if (textMode == 1) {
+                Button(
+                    onClick = {
+                        vm.sendText(textValue.text) { sent ->
+                            textStatus = if (sent) textSentLabel else textFailedLabel
+                            if (sent) textValue = TextFieldValue("")
+                        }
+                    },
+                    enabled = ready && textValue.text.isNotEmpty() && textInputReady,
+                    modifier = Modifier.weight(1f)
+                ) { Text(t("send_text")) }
+            } else {
+                OutlinedButton(
+                    onClick = { textValue = TextFieldValue(""); lastRealtimeText = "" },
+                    enabled = textValue.text.isNotEmpty(),
+                    modifier = Modifier.weight(1f)
+                ) { Text(t("text_clear")) }
+            }
             Text(
                 if (textInputReady) t("connected") else t("text_waiting"),
                 style = MaterialTheme.typography.labelSmall,
