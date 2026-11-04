@@ -73,7 +73,7 @@ private fun NumberPadPage(vm: RemoteViewModel) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 row.forEach { label ->
                     Surface(
-                        onClick = { if (ready && label.length == 1 && label[0].isDigit()) vm.sendKey(KeyCodes.digit(label[0].digitToInt())) },
+                        onClick = { if (ready) vm.sendKey(when (label) { "*" -> 17; "#" -> 18; else -> 7 + label.toInt() }) },
                         enabled = ready && label[0].isDigit(),
                         color = RemoteCard,
                         contentColor = Color.White,
