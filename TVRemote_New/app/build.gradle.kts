@@ -11,8 +11,8 @@ android {
         applicationId = "com.chi.tvremote"
         minSdk = 21
         targetSdk = 34
-        versionCode = 23
-        versionName = "1.1.11"
+        versionCode = 24
+        versionName = "1.1.12"
     }
 
     buildTypes {
