@@ -33,12 +33,17 @@ internal class AdbStreamRegistry {
                 Thread.currentThread().interrupt()
                 throw IOException("等待 ADB 串流封包遭中斷", e)
             } ?: throw IOException("等待 ADB 串流回應逾時")
+            if (packet.command == CLOSED_COMMAND || closed) {
+                throw IOException("ADB 串流已關閉")
+            }
             return packet
         }
 
         internal fun markClosed() {
             closed = true
             incoming.clear()
+            // Wake a consumer immediately instead of making it wait for its timeout.
+            incoming.offer(StreamPacket(CLOSED_COMMAND, 0))
         }
 
         fun isClosed(): Boolean = closed
@@ -87,6 +92,7 @@ internal class AdbStreamRegistry {
     fun activeCount(): Int = synchronized(lock) { streams.size }
 
     private companion object {
+        const val CLOSED_COMMAND = -1
         const val A_OKAY = 0x59414b4f
         const val A_WRTE = 0x45545257
         const val A_CLSE = 0x45534c43
