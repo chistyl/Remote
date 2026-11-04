@@ -41,12 +41,10 @@ class AdbTransport private constructor(
     @Synchronized
     private fun writePacket(command: Int, arg0: Int, arg1: Int, payload: ByteArray) {
         val checksum = payload.fold(0L) { sum, byte -> sum + (byte.toInt() and 0xff) }.toInt()
-        output.writeInt(command)
-        output.writeInt(arg0)
-        output.writeInt(arg1)
-        output.writeInt(payload.size)
-        output.writeInt(checksum)
-        output.writeInt(command xor -1)
+        val header = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(command).putInt(arg0).putInt(arg1)
+            .putInt(payload.size).putInt(checksum).putInt(command xor -1)
+        output.write(header.array())
         output.write(payload)
         output.flush()
     }
@@ -54,12 +52,15 @@ class AdbTransport private constructor(
     private data class Packet(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
 
     private fun readPacket(): Packet {
-        val command = input.readInt()
-        val arg0 = input.readInt()
-        val arg1 = input.readInt()
-        val length = input.readInt()
-        val checksum = input.readInt()
-        val magic = input.readInt()
+        val header = ByteArray(24)
+        input.readFully(header)
+        val fields = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+        val command = fields.int
+        val arg0 = fields.int
+        val arg1 = fields.int
+        val length = fields.int
+        val checksum = fields.int
+        val magic = fields.int
         if (magic != (command xor -1)) throw IOException("ADB 封包標記錯誤")
         if (length < 0 || length > MAX_PAYLOAD) throw IOException("ADB 封包長度不合法：$length")
         val payload = ByteArray(length)
@@ -69,12 +70,46 @@ class AdbTransport private constructor(
         return Packet(command, arg0, arg1, payload)
     }
 
+    @Synchronized
+    @Throws(IOException::class)
+    fun shell(command: String, timeoutMs: Int = 10000): String {
+        if (!connected) throw IOException("ADB 尚未連線")
+        require(timeoutMs > 0) { "timeoutMs 必須大於 0" }
+        val localId = 1
+        socket.soTimeout = timeoutMs
+        try {
+            writePacket(A_OPEN, localId, 0, ("shell:" + command + "\u0000").toByteArray(Charsets.UTF_8))
+            var remoteId = 0
+            var opened = false
+            val result = java.io.ByteArrayOutputStream()
+            while (true) {
+                val packet = readPacket()
+                when (packet.command) {
+                    A_OKAY -> { if (packet.arg1 == localId) { remoteId = packet.arg0; opened = true } }
+                    A_WRTE -> if (opened && packet.arg1 == localId) {
+                        result.write(packet.payload)
+                        writePacket(A_OKAY, localId, remoteId, ByteArray(0))
+                    }
+                    A_CLSE -> if (packet.arg1 == localId) break
+                    else -> throw IOException("ADB Shell 收到非預期封包：0x" + packet.command.toString(16))
+                }
+            }
+            return result.toString("UTF-8").replace("\r\n", "\n").trim()
+        } catch (e: java.net.SocketTimeoutException) {
+            throw IOException("ADB Shell 指令逾時", e)
+        } finally { socket.soTimeout = 0 }
+    }
+
     override fun close() {
         connected = false
         try { socket.close() } catch (_: Exception) { }
     }
 
     companion object {
+        private const val A_OPEN = 0x4e45504f
+        private const val A_OKAY = 0x59414b4f
+        private const val A_WRTE = 0x45545257
+        private const val A_CLSE = 0x45534c43
         private const val A_SYNC = 0x434e5953
         private const val A_CNXN = 0x4e584e43
         private const val A_AUTH = 0x48545541
@@ -132,7 +167,7 @@ class AdbTransport private constructor(
                                 transport.writePacket(A_AUTH, AUTH_RSAPUBLICKEY, 0, (androidPublicKey(keys.public as RSAPublicKey) + "\u0000").toByteArray(Charsets.UTF_8))
                                 publicKeySent = true
                                 authorizationRequested = true
-                                socket.soTimeout = 1000
+                                socket.soTimeout = AUTH_TIMEOUT_MS
                             } else {
                                 throw IOException("ADB RSA 授權未獲接受")
                             }
