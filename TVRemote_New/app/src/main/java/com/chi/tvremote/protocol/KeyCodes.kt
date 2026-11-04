@@ -18,6 +18,8 @@ object KeyCodes {
     const val MEDIA_PLAY_PAUSE = 85
     const val MEDIA_NEXT = 87
     const val MEDIA_PREV = 88
+    const val MEDIA_REWIND = 89
+    const val MEDIA_FAST_FORWARD = 90
     const val MENU = 82
     const val SETTINGS = 176
     const val CHANNEL_UP = 166
