@@ -58,6 +58,16 @@ fun RemoteScreen(vm: RemoteViewModel) {
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    // Resolve localized labels during composition; callbacks and coroutines must
+    // not invoke composable localization helpers directly.
+    val voiceConnectingLabel = t("voice_connecting")
+    val voiceListeningLabel = t("voice_listening")
+    val voiceDoneLabel = t("voice_done")
+    val voiceFailedLabel = t("voice_failed")
+    val micPermissionLabel = t("mic_permission")
+    val voiceNotSupportedLabel = t("voice_not_supported")
+    val textSentLabel = t("text_sent")
+    val textFailedLabel = t("text_failed")
 
     fun startVoiceCapture() {
         if (voiceJob?.isActive == true || !ready || !voiceSupported) return
