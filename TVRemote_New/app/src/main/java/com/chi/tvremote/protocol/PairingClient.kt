@@ -73,7 +73,7 @@ class PairingClient(private val certs: CertManager, private val tls: TlsFactory)
 
                 updateState(generation, State.WaitOptionAck)
                 write(out, PairingProtocol.envelope(20, PairingProtocol.options()))
-                readAck(input, expectedType = 21, failureMessage = "電視不支援配對選項")
+                readAck(input, expectedType = 20, failureMessage = "電視不支援配對選項")
                 ensureCurrent(generation)
 
                 updateState(generation, State.WaitConfigAck)
