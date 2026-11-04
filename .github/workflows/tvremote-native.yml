@@ -36,6 +36,10 @@ jobs:
       - name: Run unit tests
         working-directory: TVRemote_New
         run: gradle :app:testDebugUnitTest --no-daemon
+      - name: Check Android API compatibility
+        working-directory: TVRemote_New
+        run: gradle :app:lintDebug --no-daemon
+
       - name: Build debug APK
         working-directory: TVRemote_New
         run: gradle :app:assembleDebug --no-daemon
@@ -44,19 +48,19 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: TVRemote-v1.1.15-three-page-debug
+          name: TVRemote-v1.1.16-android8-debug
           path: TVRemote_New/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
       - name: Package complete source
         run: |
-          git archive --format=zip --prefix=TVRemote_New/ HEAD TVRemote_New > TVRemote-v1.1.15-three-page-source.zip
-          unzip -l TVRemote-v1.1.15-three-page-source.zip | grep -q 'TVRemote_New/app/build.gradle.kts'
-          unzip -l TVRemote-v1.1.15-three-page-source.zip | grep -q 'TVRemote_New/settings.gradle.kts'
+          git archive --format=zip --prefix=TVRemote_New/ HEAD TVRemote_New > TVRemote-v1.1.16-android8-source.zip
+          unzip -l TVRemote-v1.1.16-android8-source.zip | grep -q 'TVRemote_New/app/build.gradle.kts'
+          unzip -l TVRemote-v1.1.16-android8-source.zip | grep -q 'TVRemote_New/settings.gradle.kts'
       - name: Upload complete source
         uses: actions/upload-artifact@v4
         with:
-          name: TVRemote-v1.1.15-three-page-source
-          path: TVRemote-v1.1.15-three-page-source.zip
+          name: TVRemote-v1.1.16-android8-source
+          path: TVRemote-v1.1.16-android8-source.zip
           if-no-files-found: error
           retention-days: 14
