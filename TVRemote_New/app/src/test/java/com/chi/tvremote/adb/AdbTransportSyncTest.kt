@@ -39,24 +39,24 @@ class AdbTransportSyncTest {
                 assertEquals(A_WRTE, header.command)
                 assertEquals(remoteId, header.arg1)
                 assertEquals(AdbSyncProtocol.sendHeader("/data/local/tmp/payload.bin").toList(), header.payload.toList())
-                acknowledge(output, input, header, remoteId)
+                ack(output, header, remoteId)
 
                 val dataOne = readPacket(input)
                 assertEquals(A_WRTE, dataOne.command)
                 val decodedOne = decodeData(dataOne.payload)
                 assertEquals(AdbSyncProtocol.MAX_DATA_LENGTH, decodedOne.size)
-                acknowledge(output, input, dataOne, remoteId)
+                ack(output, dataOne, remoteId)
 
                 val dataTwo = readPacket(input)
                 assertEquals(A_WRTE, dataTwo.command)
                 val decodedTwo = decodeData(dataTwo.payload)
                 assertEquals(payload.size - AdbSyncProtocol.MAX_DATA_LENGTH, decodedTwo.size)
-                acknowledge(output, input, dataTwo, remoteId)
+                ack(output, dataTwo, remoteId)
 
                 val done = readPacket(input)
                 assertEquals(A_WRTE, done.command)
                 assertEquals(0x454e4f44, ByteBuffer.wrap(done.payload).order(ByteOrder.LITTLE_ENDIAN).int)
-                acknowledge(output, input, done, remoteId)
+                ack(output, done, remoteId)
 
                 val okay = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0x59414b4f).array()
                 output.write(AdbPacketCodec.encode(A_WRTE, remoteId, open.arg0, okay))
@@ -83,14 +83,9 @@ class AdbTransportSyncTest {
         }
     }
 
-    private fun acknowledge(output: DataOutputStream, input: DataInputStream, frame: Frame, remoteId: Int) {
+    private fun ack(output: DataOutputStream, frame: Frame, remoteId: Int) {
         output.write(AdbPacketCodec.encode(A_OKAY, remoteId, frame.arg0, byteArrayOf()))
         output.flush()
-        val next = readPacket(input)
-        // The client must wait for this acknowledgement before sending the next WRTE.
-        assertTrue(next.command == A_WRTE || next.command == A_CLSE)
-        // Push it back is not possible on a socket, so this helper is intentionally
-        // not used for multi-frame sequencing.
     }
 
     private fun decodeData(frame: ByteArray): ByteArray {
