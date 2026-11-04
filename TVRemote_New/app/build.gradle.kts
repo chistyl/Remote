@@ -9,10 +9,11 @@ android {
 
     defaultConfig {
         applicationId = "com.chi.tvremote.next"
-        minSdk = 21
+        // Android 8.0 Oreo (API 26) is the minimum supported version.
+        minSdk = 26
         targetSdk = 34
-        versionCode = 27
-        versionName = "1.1.15"
+        versionCode = 28
+        versionName = "1.1.16"
     }
 
     buildTypes {
