@@ -20,11 +20,9 @@ import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
 /**
- * Minimal classic ADB-over-TCP transport and RSA authorization.
- *
- * This intentionally implements only the ADB transport handshake. Shell streams and
- * scrcpy UHID input are separate protocol layers and are not implied by a successful
- * connection here.
+ * Classic ADB-over-TCP transport, RSA authorization and single-reader stream routing.
+ * Shell commands use independent logical stream IDs. scrcpy UHID input is a separate
+ * layer and is not implied by a successful ADB shell connection.
  */
 class AdbTransport private constructor(
     private val socket: Socket,
@@ -42,6 +40,9 @@ class AdbTransport private constructor(
 
     @Volatile
     private var peerMaxPayload: Int = MAX_PAYLOAD
+    private val streamRegistry = AdbStreamRegistry()
+    @Volatile
+    private var readerPump: AdbPacketReaderPump? = null
 
     @Synchronized
     private fun writePacket(command: Int, arg0: Int, arg1: Int, payload: ByteArray) {
@@ -69,23 +70,40 @@ class AdbTransport private constructor(
     fun shell(command: String, timeoutMs: Int = 10000): String {
         if (!connected) throw IOException("ADB 尚未連線")
         require(timeoutMs > 0) { "timeoutMs 必須大於 0" }
-        val localId = 1
-        socket.soTimeout = timeoutMs
+        val pump = readerPump ?: throw IOException("ADB 封包讀取器尚未啟動")
+        if (!pumpRunning()) throw IOException("ADB 封包讀取器已停止")
+        val stream = streamRegistry.open()
+        var remoteId = 0
+        val result = java.io.ByteArrayOutputStream()
         try {
-            writePacket(A_OPEN, localId, 0, ("shell:" + command + "\u0000").toByteArray(Charsets.UTF_8))
-            var remoteId = 0
+            writePacket(A_OPEN, stream.localId, 0, ("shell:" + command + "\u0000").toByteArray(Charsets.UTF_8))
+            val deadline = System.currentTimeMillis() + timeoutMs
             var opened = false
-            val result = java.io.ByteArrayOutputStream()
             while (true) {
-                val packet = readPacket()
+                val remaining = deadline - System.currentTimeMillis()
+                if (remaining <= 0) throw java.net.SocketTimeoutException("ADB Shell 指令逾時")
+                val packet = stream.take(remaining)
                 when (packet.command) {
-                    A_OKAY -> { if (packet.arg1 == localId) { remoteId = packet.arg0; opened = true } }
-                    A_WRTE -> if (opened && packet.arg1 == localId) {
-                        result.write(packet.payload)
-                        writePacket(A_OKAY, localId, remoteId, ByteArray(0))
+                    A_OKAY -> {
+                        if (!opened) {
+                            remoteId = packet.remoteId
+                            opened = true
+                        } else {
+                            // ADB flow-control acknowledgement; no payload is expected.
+                        }
                     }
-                    A_CLSE -> if (packet.arg1 == localId) {
-                        writePacket(A_CLSE, localId, packet.arg0, ByteArray(0))
+                    A_WRTE -> {
+                        if (!opened || packet.remoteId != remoteId) {
+                            throw IOException("ADB Shell 收到不屬於此串流的資料")
+                        }
+                        result.write(packet.payload)
+                        writePacket(A_OKAY, stream.localId, remoteId, ByteArray(0))
+                    }
+                    A_CLSE -> {
+                        if (opened && packet.remoteId != remoteId) {
+                            throw IOException("ADB Shell 關閉封包的遠端 ID 不符")
+                        }
+                        writePacket(A_CLSE, stream.localId, packet.remoteId, ByteArray(0))
                         break
                     }
                     else -> throw IOException("ADB Shell 收到非預期封包：0x" + packet.command.toString(16))
@@ -99,13 +117,17 @@ class AdbTransport private constructor(
             close()
             throw e
         } finally {
-            try { if (!socket.isClosed) socket.soTimeout = 0 } catch (_: Exception) {}
+            streamRegistry.close(stream.localId)
         }
     }
+
+    private fun pumpRunning(): Boolean = connected && readerPump != null
 
     override fun close() {
         connected = false
         try { socket.close() } catch (_: Exception) { }
+        try { readerPump?.close() } catch (_: Exception) { }
+        readerPump = null
     }
 
     companion object {
@@ -158,6 +180,15 @@ class AdbTransport private constructor(
                             // Clamp defensively to our local packet decoder limit.
                             transport.peerMaxPayload = packet.arg1.coerceIn(1024, MAX_PAYLOAD)
                             socket.soTimeout = 0
+                            transport.readerPump = AdbPacketReaderPump(
+                                socket.getInputStream(),
+                                transport.streamRegistry,
+                                { error ->
+                                    transport.connected = false
+                                    try { socket.close() } catch (_: Exception) { }
+                                },
+                                { transport.peerMaxPayload }
+                            ).also { it.start() }
                             return ConnectResult(transport, authorizationRequested)
                         }
                         A_AUTH -> {
