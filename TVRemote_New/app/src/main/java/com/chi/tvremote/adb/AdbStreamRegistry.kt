@@ -4,11 +4,7 @@ import java.io.IOException
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
-/**
- * Thread-safe routing table for independent ADB logical streams.
- * A single transport reader can dispatch incoming packets without blocking
- * unrelated streams while each consumer waits on its own queue.
- */
+/** Thread-safe routing table for independent ADB logical streams. */
 internal class AdbStreamRegistry {
     internal data class StreamPacket(
         val command: Int,
@@ -18,32 +14,65 @@ internal class AdbStreamRegistry {
 
     internal class Stream internal constructor(val localId: Int) {
         private val incoming = LinkedBlockingQueue<StreamPacket>()
+        private val duplexData = LinkedBlockingQueue<StreamPacket>()
+        private val duplexAcks = LinkedBlockingQueue<StreamPacket>()
         @Volatile private var closed = false
+        @Volatile private var duplex = false
+
+        /** Must be enabled before sending A_OPEN. */
+        internal fun enableDuplex() {
+            check(!closed)
+            duplex = true
+        }
 
         internal fun offer(packet: StreamPacket) {
-            if (!closed) incoming.offer(packet)
+            if (closed) return
+            if (!duplex) {
+                incoming.offer(packet)
+                return
+            }
+            when (packet.command) {
+                A_WRTE -> duplexData.offer(packet)
+                A_OKAY -> duplexAcks.offer(packet)
+                A_CLSE -> {
+                    duplexData.offer(packet)
+                    duplexAcks.offer(packet)
+                    incoming.offer(packet)
+                }
+                else -> incoming.offer(packet)
+            }
         }
 
         @Throws(IOException::class)
-        fun take(timeoutMs: Long): StreamPacket {
+        fun take(timeoutMs: Long): StreamPacket = poll(incoming, timeoutMs)
+
+        @Throws(IOException::class)
+        fun takeDuplexData(timeoutMs: Long): StreamPacket = poll(duplexData, timeoutMs)
+
+        @Throws(IOException::class)
+        fun takeDuplexAck(timeoutMs: Long): StreamPacket = poll(duplexAcks, timeoutMs)
+
+        private fun poll(queue: LinkedBlockingQueue<StreamPacket>, timeoutMs: Long): StreamPacket {
             if (closed) throw IOException("ADB 串流已關閉")
             val packet = try {
-                incoming.poll(timeoutMs, TimeUnit.MILLISECONDS)
+                queue.poll(timeoutMs, TimeUnit.MILLISECONDS)
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
                 throw IOException("等待 ADB 串流封包遭中斷", e)
             } ?: throw IOException("等待 ADB 串流回應逾時")
-            if (packet.command == CLOSED_COMMAND || closed) {
-                throw IOException("ADB 串流已關閉")
-            }
+            if (packet.command == CLOSED_COMMAND || closed) throw IOException("ADB 串流已關閉")
             return packet
         }
 
         internal fun markClosed() {
             closed = true
+            val signal = StreamPacket(CLOSED_COMMAND, 0)
             incoming.clear()
-            // Wake a consumer immediately instead of making it wait for its timeout.
-            incoming.offer(StreamPacket(CLOSED_COMMAND, 0))
+            duplexData.clear()
+            duplexAcks.clear()
+            incoming.offer(signal)
+            duplexData.offer(signal)
+            duplexAcks.offer(signal)
         }
 
         fun isClosed(): Boolean = closed
@@ -64,16 +93,8 @@ internal class AdbStreamRegistry {
             true
         } ?: false
 
-    /**
-     * Routes protocol packets from the single socket reader. For A_OKAY,
-     * A_WRTE and A_CLSE, ADB places the host's local stream ID in arg1.
-     */
-    fun dispatchTransportPacket(
-        command: Int,
-        arg0: Int,
-        arg1: Int,
-        payload: ByteArray
-    ): Boolean {
+    /** ADB uses arg1 for the host's local stream ID in stream packets. */
+    fun dispatchTransportPacket(command: Int, arg0: Int, arg1: Int, payload: ByteArray): Boolean {
         if (arg1 <= 0) return false
         if (command != A_OKAY && command != A_WRTE && command != A_CLSE) return false
         return dispatch(arg1, StreamPacket(command, arg0, payload))
