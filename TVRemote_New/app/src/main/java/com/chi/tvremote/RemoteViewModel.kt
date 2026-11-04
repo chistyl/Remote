@@ -35,6 +35,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     private var adbTransport: AdbTransport? = null
     private val adbMutex = Mutex()
+    @Volatile private var adbGeneration = 0L
     private val _adbStatus = MutableStateFlow("尚未授權")
     val adbStatus: StateFlow<String> = _adbStatus.asStateFlow()
     private val _adbConnecting = MutableStateFlow(false)
