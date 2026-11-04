@@ -144,6 +144,7 @@ class AdbTransport private constructor(
                 remoteId = opened.remoteId,
                 maxPayload = peerMaxPayload,
                 readPacket = { waitMs -> stream.takeDuplexData(waitMs) },
+                readAck = { waitMs -> stream.takeDuplexAck(waitMs) },
                 writePacket = { command, local, remote, payload ->
                     this.writePacket(command, local, remote, payload)
                 },
