@@ -2,6 +2,7 @@ package com.chi.tvremote.adb
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -9,6 +10,9 @@ import java.nio.ByteOrder
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPublicKey
 import java.util.Base64
+import java.io.File
+import java.io.IOException
+import java.net.Socket
 
 class AdbPublicKeyTest {
     @Test
@@ -38,4 +42,22 @@ class AdbPublicKeyTest {
         assertEquals((pair.public as RSAPublicKey).publicExponent.toInt(), exponent)
         assertTrue(encoded.endsWith(" tvremote"))
     }
+    @Test
+    fun closingPendingSocketCancelsConnectBeforeNetworkWait() {
+        val root = File(System.getProperty("java.io.tmpdir"), "adb-cancel-test-${System.nanoTime()}")
+        assertTrue(root.mkdirs())
+        var captured: Socket? = null
+        try {
+            AdbTransport.connect(root, "127.0.0.1", 5555) { socket ->
+                captured = socket
+                socket.close()
+            }
+            fail("Expected cancelled socket connection to fail")
+        } catch (_: IOException) {
+            assertTrue(captured?.isClosed == true)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
 }
