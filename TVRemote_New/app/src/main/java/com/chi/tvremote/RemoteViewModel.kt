@@ -12,6 +12,7 @@ import com.chi.tvremote.protocol.PairingClient
 import com.chi.tvremote.protocol.RemoteClient
 import com.chi.tvremote.protocol.ServiceResolveEpoch
 import com.chi.tvremote.protocol.TlsFactory
+import com.chi.tvremote.adb.AdbTransport
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -31,6 +32,73 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     val pairing = PairingClient(certs, tls)
     val remote = RemoteClient(tls)
     private val textEditMutex = Mutex()
+
+    private var adbTransport: AdbTransport? = null
+    private val adbMutex = Mutex()
+    private val _adbStatus = MutableStateFlow("尚未授權")
+    val adbStatus: StateFlow<String> = _adbStatus.asStateFlow()
+    private val _adbConnecting = MutableStateFlow(false)
+    val adbConnecting: StateFlow<Boolean> = _adbConnecting.asStateFlow()
+
+    /** Authenticates with classic ADB TCP. This is separate from Android TV Remote pairing. */
+    fun connectAdb() {
+        val address = _host.value.trim()
+        if (address.isBlank() || _adbConnecting.value) {
+            if (address.isBlank()) _adbStatus.value = "請先選擇電視"
+            return
+        }
+        viewModelScope.launch {
+            _adbConnecting.value = true
+            _adbStatus.value = "正在連線並等待電視授權…"
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    adbMutex.withLock {
+                        adbTransport?.close()
+                        adbTransport = null
+                        AdbTransport.connect(getApplication<Application>().filesDir, address)
+                    }
+                }
+                adbTransport = result.transport
+                _adbStatus.value = if (result.authorizationRequested) {
+                    "已收到電視端 ADB 授權回應"
+                } else {
+                    "ADB 已連線"
+                }
+            } catch (e: Exception) {
+                _adbStatus.value = e.message ?: "ADB 連線失敗"
+            } finally {
+                _adbConnecting.value = false
+            }
+        }
+    }
+
+    fun disconnectAdb() {
+        viewModelScope.launch(Dispatchers.IO) {
+            adbMutex.withLock {
+                try { adbTransport?.close() } catch (_: Exception) {}
+                adbTransport = null
+            }
+            _adbStatus.value = "ADB 已中斷"
+        }
+    }
+
+    /** Runs a diagnostic shell command only after successful ADB authorization. */
+    fun runAdbDiagnostic(command: String, onResult: (String?) -> Unit = {}) {
+        viewModelScope.launch {
+            val result = try {
+                withContext(Dispatchers.IO) {
+                    adbMutex.withLock {
+                        val transport = adbTransport ?: throw java.io.IOException("ADB 尚未授權連線")
+                        transport.shell(command)
+                    }
+                }
+            } catch (e: Exception) {
+                _adbStatus.value = e.message ?: "ADB 指令失敗"
+                null
+            }
+            onResult(result)
+        }
+    }
 
     private val _adbProbeStatus = MutableStateFlow("尚未檢查")
     val adbProbeStatus: StateFlow<String> = _adbProbeStatus.asStateFlow()
@@ -303,6 +371,8 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         remote.disconnect()
+        try { adbTransport?.close() } catch (_: Exception) {}
+        adbTransport = null
         pairing.cancel()
         stopDiscovery()
         super.onCleared()
