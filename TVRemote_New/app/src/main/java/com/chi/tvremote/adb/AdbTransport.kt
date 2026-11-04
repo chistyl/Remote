@@ -40,16 +40,9 @@ class AdbTransport private constructor(
 
     @Synchronized
     private fun writePacket(command: Int, arg0: Int, arg1: Int, payload: ByteArray) {
-        val checksum = payload.fold(0L) { sum, byte -> sum + (byte.toInt() and 0xff) }.toInt()
-        val header = ByteBuffer.allocate(24).order(ByteOrder.LITTLE_ENDIAN)
-            .putInt(command).putInt(arg0).putInt(arg1)
-            .putInt(payload.size).putInt(checksum).putInt(command xor -1)
-        output.write(header.array())
-        output.write(payload)
+        output.write(AdbPacketCodec.encode(command, arg0, arg1, payload))
         output.flush()
     }
-
-    private data class Packet(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
 
     private fun readPacket(): Packet {
         val header = ByteArray(24)
