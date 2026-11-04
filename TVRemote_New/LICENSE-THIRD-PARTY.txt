@@ -1,0 +1,5 @@
+Protocol implementation reference:
+The initial Android TV Remote v2 Kotlin implementation was informed by the public MIT-licensed project:
+https://github.com/dakopopelman/AndroidTVRemoteControl
+
+This project is a separate application with a new package ID and a redesigned Traditional Chinese interface. Retain the upstream MIT license notice when redistributing any code derived from that project.
