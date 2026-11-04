@@ -1,0 +1,60 @@
+name: TV Remote native build
+
+on:
+  push:
+    branches:
+      - "work/tvremote-v1.1.15-three-page-remote"
+    paths:
+      - "TVRemote_New/**"
+      - ".github/workflows/tvremote-native.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.7
+      - name: Run unit tests
+        working-directory: TVRemote_New
+        run: gradle :app:testDebugUnitTest --no-daemon
+      - name: Build debug APK
+        working-directory: TVRemote_New
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Validate APK
+        run: test -s TVRemote_New/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVRemote-v1.1.15-three-page-debug
+          path: TVRemote_New/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package complete source
+        run: |
+          git archive --format=zip --prefix=TVRemote_New/ HEAD TVRemote_New > TVRemote-v1.1.15-three-page-source.zip
+          unzip -l TVRemote-v1.1.15-three-page-source.zip | grep -q 'TVRemote_New/app/build.gradle.kts'
+          unzip -l TVRemote-v1.1.15-three-page-source.zip | grep -q 'TVRemote_New/settings.gradle.kts'
+      - name: Upload complete source
+        uses: actions/upload-artifact@v4
+        with:
+          name: TVRemote-v1.1.15-three-page-source
+          path: TVRemote-v1.1.15-three-page-source.zip
+          if-no-files-found: error
+          retention-days: 14
