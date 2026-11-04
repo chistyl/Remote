@@ -90,7 +90,10 @@ class AdbTransport private constructor(
                         result.write(packet.payload)
                         writePacket(A_OKAY, localId, remoteId, ByteArray(0))
                     }
-                    A_CLSE -> if (packet.arg1 == localId) break
+                    A_CLSE -> if (packet.arg1 == localId) {
+                        writePacket(A_CLSE, localId, packet.arg0, ByteArray(0))
+                        break
+                    }
                     else -> throw IOException("ADB Shell 收到非預期封包：0x" + packet.command.toString(16))
                 }
             }
