@@ -33,14 +33,22 @@ class CertManager(private val context: Context) {
         generate()
     }
 
-    private fun load(): Boolean = try {
-        val ks = KeyStore.getInstance("PKCS12")
-        file.inputStream().use { ks.load(it, password) }
-        val cert = ks.getCertificate(alias) as? X509Certificate ?: return false
-        keyStore = ks
-        certificate = cert
-        true
-    } catch (_: Throwable) { false }
+    private fun load(): Boolean {
+        return try {
+            val ks = KeyStore.getInstance("PKCS12")
+            file.inputStream().use { ks.load(it, password) }
+            val cert = ks.getCertificate(alias) as? X509Certificate
+            if (cert == null) {
+                false
+            } else {
+                keyStore = ks
+                certificate = cert
+                true
+            }
+        } catch (_: Throwable) {
+            false
+        }
+    }
 
     private fun generate() {
         val generator = KeyPairGenerator.getInstance("RSA")
