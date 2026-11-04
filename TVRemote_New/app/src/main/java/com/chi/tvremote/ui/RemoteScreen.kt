@@ -151,9 +151,25 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
         }
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = controlMode == 0, onClick = { vm.setRemoteControlMode(0) }, label = { Text(t("dpad_mode")) }, modifier = Modifier.weight(1f))
-            FilterChip(selected = controlMode == 1, onClick = { vm.setRemoteControlMode(1) }, label = { Text(t("touchpad_mode")) }, modifier = Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(
+                onClick = { vm.setRemoteControlMode(0) },
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = if (controlMode == 0) Color(0xFF4B455A) else Color(0xFF101116),
+                contentColor = Color.White
+            ) {
+                Box(contentAlignment = Alignment.Center) { Text(t("dpad_mode"), style = MaterialTheme.typography.titleSmall) }
+            }
+            Surface(
+                onClick = { vm.setRemoteControlMode(1) },
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = if (controlMode == 1) Color(0xFF4B455A) else Color(0xFF101116),
+                contentColor = Color.White
+            ) {
+                Box(contentAlignment = Alignment.Center) { Text(t("touchpad_mode"), style = MaterialTheme.typography.titleSmall) }
+            }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
             Text(t("hold_repeat"), style = MaterialTheme.typography.labelSmall)
