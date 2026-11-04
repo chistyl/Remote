@@ -1,6 +1,8 @@
 package com.chi.tvremote.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.chi.tvremote.RemoteViewModel
@@ -117,6 +120,20 @@ private fun MousePage(vm: RemoteViewModel) {
             color = Color(0xFF353535),
             shape = RoundedCornerShape(28.dp),
             modifier = Modifier.fillMaxWidth().weight(1f)
+                .pointerInput(vm) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val scale = 1.35f
+                        vm.sendScrcpyMouseReport(
+                            dx = (dragAmount.x * scale).toInt().coerceIn(-127, 127),
+                            dy = (dragAmount.y * scale).toInt().coerceIn(-127, 127)
+                        )
+                    }
+                }
+                .clickable {
+                    vm.sendScrcpyMouseReport(buttons = 1)
+                    vm.sendScrcpyMouseReport(buttons = 0)
+                }
         ) {
             Column(
                 Modifier.fillMaxSize().padding(24.dp),
@@ -125,6 +142,11 @@ private fun MousePage(vm: RemoteViewModel) {
             ) {
                 Icon(Icons.Default.Mouse, contentDescription = null, tint = RemoteAccent, modifier = Modifier.size(54.dp))
                 Spacer(Modifier.height(14.dp))
+                Text("觸控板", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(6.dp))
+                Text("滑動：移動滑鼠　點一下：左鍵",
+                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(10.dp))
                 Text("ADB 裝置授權", color = Color.White, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
                 Text(if (host.isBlank()) "請先在遙控器頁面選擇電視" else "目標電視：$host:5555",
