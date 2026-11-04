@@ -58,6 +58,8 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val result = withContext(Dispatchers.IO) {
                     adbMutex.withLock {
+                        try { scrcpyMouseChannel?.close() } catch (_: Exception) {}
+                        scrcpyMouseChannel = null
                         adbTransport?.close()
                         adbTransport = null
                         AdbTransport.connect(getApplication<Application>().filesDir, address) { socket ->
@@ -87,6 +89,11 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         try { adbPendingSocket.getAndSet(null)?.close() } catch (_: Exception) {}
         viewModelScope.launch(Dispatchers.IO) {
             adbMutex.withLock {
+                try {
+                    scrcpyMouseChannel?.output?.write(ScrcpyControlProtocol.uhidDestroy(ScrcpyControlProtocol.HID_ID_MOUSE))
+                    scrcpyMouseChannel?.close()
+                } catch (_: Exception) {
+                } finally { scrcpyMouseChannel = null }
                 try { adbTransport?.close() } catch (_: Exception) {}
                 adbTransport = null
             }
@@ -127,6 +134,10 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                         val transport = adbTransport ?: throw java.io.IOException("請先完成 ADB 連線與電視授權")
                         scrcpyMouseChannel?.close()
                         scrcpyMouseChannel = null
+                        val uhidCheck = transport.shell("if [ -c /dev/uhid ] && [ -w /dev/uhid ]; then echo UHID_READY; else echo UHID_UNAVAILABLE; fi", timeoutMs = 10000)
+                        if (!uhidCheck.contains("UHID_READY")) {
+                            throw java.io.IOException("電視端 /dev/uhid 不存在或 ADB shell 無寫入權限，無法啟動真正的 HID 滑鼠")
+                        }
                         val scid = ((System.currentTimeMillis() and 0x7fffffffL).toInt()).coerceAtLeast(1)
                         val scidHex = "%08x".format(java.util.Locale.ROOT, scid)
                         val command = "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 5.0.1 scid=$scidHex log_level=info video=false audio=false control=true tunnel_forward=false send_dummy_byte=false send_device_meta=false send_stream_meta=false cleanup=true >/dev/null 2>&1 &"
@@ -148,7 +159,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                         } catch (e: Exception) { opened.close(); throw e }
                     }
                 }
-                _adbStatus.value = "滑鼠服務已啟動；若電視核心不支援 UHID，將無法建立滑鼠裝置"
+                _adbStatus.value = "電視端 UHID 節點可用，滑鼠控制通道已啟動"
             } catch (e: Exception) { _adbStatus.value = e.message ?: "滑鼠服務啟動失敗" }
         }
     }
