@@ -103,8 +103,8 @@ internal object ScrcpyControlProtocol {
             out.writeInt(y)
             out.writeShort(screenWidth)
             out.writeShort(screenHeight)
-            out.writeShort((horizontal / 16f * 32767f).toInt())
-            out.writeShort((vertical / 16f * 32767f).toInt())
+            out.writeShort((horizontal / 16f * 32768f).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()))
+            out.writeShort((vertical / 16f * 32768f).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()))
             out.writeInt(buttons)
         }
     }
