@@ -107,6 +107,56 @@ class AdbTransportMultiplexTest {
         }
     }
 
+    @Test
+    fun closingOneShellStreamDoesNotMisrouteOtherStreamResponses() {
+        val server = ServerSocket(0)
+        val executor = Executors.newSingleThreadExecutor()
+        val serverResult = executor.submit(Callable {
+            server.accept().use { peer ->
+                peer.soTimeout = 5000
+                val input = DataInputStream(peer.getInputStream())
+                val output = DataOutputStream(peer.getOutputStream())
+                val opens = listOf(readPacket(input), readPacket(input))
+                val first = opens.single { String(it.payload).contains("echo failing") }
+                val second = opens.single { String(it.payload).contains("echo surviving") }
+                output.write(AdbPacketCodec.encode(A_OKAY, 801, first.arg0, byteArrayOf()))
+                output.write(AdbPacketCodec.encode(A_OKAY, 802, second.arg0, byteArrayOf()))
+                output.flush()
+
+                // Close only the first logical stream; the second remains usable.
+                output.write(AdbPacketCodec.encode(A_CLSE, 801, first.arg0, byteArrayOf()))
+                output.write(AdbPacketCodec.encode(A_WRTE, 802, second.arg0, "survived".toByteArray()))
+                output.write(AdbPacketCodec.encode(A_CLSE, 802, second.arg0, byteArrayOf()))
+                output.flush()
+
+                // Receive the close response and the write ACK + close response.
+                repeat(3) { readPacket(input) }
+                true
+            }
+        })
+
+        val clientSocket = Socket("127.0.0.1", server.localPort)
+        val transport = AdbTransport.fromConnectedSocketForTest(clientSocket)
+        val workers = Executors.newFixedThreadPool(2)
+        try {
+            val failing = workers.submit<String> { transport.shell("echo failing", 5000) }
+            val surviving = workers.submit<String> { transport.shell("echo surviving", 5000) }
+            try {
+                failing.get(6, TimeUnit.SECONDS)
+                throw AssertionError("closed stream should fail")
+            } catch (expected: java.util.concurrent.ExecutionException) {
+                assertTrue(expected.cause is java.io.IOException)
+            }
+            assertEquals("survived", surviving.get(6, TimeUnit.SECONDS))
+            assertTrue(serverResult.get(2, TimeUnit.SECONDS))
+        } finally {
+            transport.close()
+            workers.shutdownNow()
+            executor.shutdownNow()
+            server.close()
+        }
+    }
+
     private data class Frame(val command: Int, val arg0: Int, val arg1: Int, val payload: ByteArray)
 
     private fun readPacket(input: DataInputStream): Frame {
