@@ -120,6 +120,86 @@ class AdbTransport private constructor(
         }
     }
 
+    /**
+     * Pushes a local file through the ADB SYNC service on its own logical stream.
+     * The transport reader remains shared, while every WRTE is flow-controlled by
+     * its matching A_OKAY before the next chunk is sent.
+     */
+    @Throws(IOException::class)
+    fun pushFile(
+        localFile: File,
+        remotePath: String,
+        mode: Int = 0x1a4,
+        timeoutMs: Int = 15000
+    ) {
+        if (!connected) throw IOException("ADB 尚未連線")
+        if (!localFile.isFile || !localFile.canRead()) throw IOException("找不到可讀取的檔案：${localFile.name}")
+        require(timeoutMs > 0) { "timeoutMs 必須大於 0" }
+        val stream = streamRegistry.open()
+        var remoteId = 0
+        var opened = false
+        val deadline = System.currentTimeMillis() + timeoutMs
+        fun remaining(): Long {
+            val value = deadline - System.currentTimeMillis()
+            if (value <= 0) throw java.net.SocketTimeoutException("ADB SYNC 傳輸逾時")
+            return value
+        }
+        fun awaitAck() {
+            while (true) {
+                val packet = stream.take(remaining())
+                when (packet.command) {
+                    A_OKAY -> {
+                        if (packet.remoteId != remoteId) throw IOException("ADB SYNC ACK 遠端串流 ID 不符")
+                        return
+                    }
+                    A_CLSE -> throw IOException("ADB SYNC 串流在傳輸期間被電視關閉")
+                    else -> throw IOException("ADB SYNC 等待 ACK 時收到非預期封包")
+                }
+            }
+        }
+        fun writeFrame(frame: ByteArray) {
+            writePacket(A_WRTE, stream.localId, remoteId, frame)
+            awaitAck()
+        }
+        try {
+            writePacket(A_OPEN, stream.localId, 0, "sync:\u0000".toByteArray(Charsets.UTF_8))
+            val openReply = stream.take(remaining())
+            if (openReply.command != A_OKAY) throw IOException("電視拒絕開啟 ADB SYNC 服務")
+            remoteId = openReply.remoteId
+            if (remoteId <= 0) throw IOException("ADB SYNC 遠端串流 ID 不合法")
+            opened = true
+
+            writeFrame(AdbSyncProtocol.sendHeader(remotePath, mode))
+            localFile.inputStream().use { source ->
+                val buffer = ByteArray(AdbSyncProtocol.MAX_DATA_LENGTH)
+                while (true) {
+                    val count = source.read(buffer)
+                    if (count < 0) break
+                    if (count == 0) continue
+                    writeFrame(AdbSyncProtocol.dataChunk(if (count == buffer.size) buffer.copyOf() else buffer.copyOf(count)))
+                }
+            }
+            val timestamp = System.currentTimeMillis() / 1000L
+            writeFrame(AdbSyncProtocol.done(timestamp))
+
+            // The SYNC service returns its final OKAY/FAIL record in A_WRTE.
+            val responsePacket = stream.take(remaining())
+            if (responsePacket.command != A_WRTE || responsePacket.remoteId != remoteId) {
+                throw IOException("ADB SYNC 未收到有效的完成回應")
+            }
+            writePacket(A_OKAY, stream.localId, remoteId, ByteArray(0))
+            val response = AdbSyncProtocol.parseResponse(responsePacket.payload)
+            if (!response.success) throw IOException("ADB SYNC 傳輸失敗：${response.message}")
+        } catch (e: java.net.SocketTimeoutException) {
+            throw IOException("ADB SYNC 傳輸逾時", e)
+        } finally {
+            if (opened && connected) {
+                try { writePacket(A_CLSE, stream.localId, remoteId, ByteArray(0)) } catch (_: Exception) { }
+            }
+            streamRegistry.close(stream.localId)
+        }
+    }
+
     private fun pumpRunning(): Boolean = connected && readerPump != null
 
     override fun close() {
