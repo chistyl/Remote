@@ -91,6 +91,25 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
             _adbStatus.value = "ADB 已中斷"
         }
     }
+    /** Verifies the bundled official scrcpy server and pushes it to the authorized TV. */
+    fun installScrcpyServer() {
+        if (_adbConnecting.value) return
+        viewModelScope.launch {
+            _adbStatus.value = "正在驗證並部署 scrcpy Server…"
+            try {
+                withContext(Dispatchers.IO) {
+                    adbMutex.withLock {
+                        val transport = adbTransport ?: throw java.io.IOException("請先完成 ADB 連線與電視授權")
+                        val server = com.chi.tvremote.adb.ScrcpyServerAsset.extractVerified(getApplication<Application>())
+                        transport.pushFile(server, com.chi.tvremote.adb.ScrcpyServerAsset.REMOTE_PATH, mode = 0x1a4, timeoutMs = 30000)
+                    }
+                }
+                _adbStatus.value = "scrcpy Server 5.0.1 已部署；尚未啟動滑鼠服務"
+            } catch (e: Exception) {
+                _adbStatus.value = e.message ?: "scrcpy Server 部署失敗"
+            }
+        }
+    }
     /** Runs a diagnostic shell command only after successful ADB authorization. */
     fun runAdbDiagnostic(command: String, onResult: (String?) -> Unit = {}) {
         viewModelScope.launch {
