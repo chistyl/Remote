@@ -310,8 +310,12 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setHost(value: String) {
-        _host.value = value.trim()
-        prefs.edit().putString("host", value.trim()).apply()
+        val normalized = value.trim()
+        if (normalized != _host.value && (adbTransport != null || _adbConnecting.value)) {
+            disconnectAdb()
+        }
+        _host.value = normalized
+        prefs.edit().putString("host", normalized).apply()
     }
 
     fun startPairing() {
