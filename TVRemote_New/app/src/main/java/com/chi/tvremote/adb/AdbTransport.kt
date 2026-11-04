@@ -108,9 +108,9 @@ class AdbTransport private constructor(
                 var authorizationRequested = false
                 val deadline = System.currentTimeMillis() + AUTH_TIMEOUT_MS
                 while (System.currentTimeMillis() < deadline) {
-                    val packet = try { transport.readPacket() } catch (e: java.net.SocketTimeoutException) {
-                        if (publicKeySent) throw IOException("等待電視確認 ADB 授權逾時", e)
-                        throw IOException("等待 ADB 電視回應逾時", e)
+                    socket.soTimeout = minOf(1000L, (deadline - System.currentTimeMillis()).coerceAtLeast(1L)).toInt()
+                    val packet = try { transport.readPacket() } catch (_: java.net.SocketTimeoutException) {
+                        continue
                     }
                     when (packet.command) {
                         A_CNXN -> {
@@ -169,8 +169,8 @@ class AdbTransport private constructor(
         internal fun androidPublicKey(key: RSAPublicKey): String {
             val words = 64
             val modulus = key.modulus
-            val n0inv = BigInteger.ONE.shiftLeft(32).subtract(modulus.mod(wordsBits()))
-                .mod(wordsModulus()).mod(wordsModulus()).let { BigInteger.ONE.shiftLeft(32).subtract(it).toLong() }
+            val radix = wordsModulus()
+            val n0inv = modulus.mod(radix).modInverse(radix).negate().mod(radix).toLong()
             val rr = BigInteger.ONE.shiftLeft(4096).mod(modulus)
                 .multiply(BigInteger.ONE.shiftLeft(4096).mod(modulus)).mod(modulus)
             val buffer = ByteBuffer.allocate(4 + 4 + 256 + 256 + 4).order(ByteOrder.LITTLE_ENDIAN)
