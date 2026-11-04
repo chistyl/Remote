@@ -5,6 +5,7 @@ object KeyCodes {
     const val BACK = 4
     const val POWER = 26
     const val ENTER = 66
+    const val DEL = 67
     const val DPAD_UP = 19
     const val DPAD_DOWN = 20
     const val DPAD_LEFT = 21
