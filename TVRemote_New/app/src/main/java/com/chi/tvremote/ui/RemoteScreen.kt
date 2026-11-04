@@ -233,7 +233,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 if (textMode == 0 && updated.composition == null && updated.text != previous) {
                     lastRealtimeText = updated.text
                     vm.sendRealtimeTextDelta(previous, updated.text) { sent ->
-                        if (!sent) textStatus = t("text_sync_failed")
+                        if (!sent) textStatus = textSyncFailedLabel
                     }
                 }
             },
