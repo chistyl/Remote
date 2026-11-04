@@ -2,7 +2,7 @@ package com.chi.tvremote.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -115,78 +115,87 @@ private fun MousePage(vm: RemoteViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
         Text("滑鼠控制", color = Color.White, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(14.dp))
         Surface(
             color = Color(0xFF353535),
             shape = RoundedCornerShape(28.dp),
             modifier = Modifier.fillMaxWidth().weight(1f)
-                .pointerInput(vm) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val scale = 1.35f
-                        vm.sendScrcpyMouseReport(
-                            dx = (dragAmount.x * scale).toInt().coerceIn(-127, 127),
-                            dy = (dragAmount.y * scale).toInt().coerceIn(-127, 127)
-                        )
-                    }
-                }
-                .clickable {
-                    vm.sendScrcpyMouseReport(buttons = 1)
-                    vm.sendScrcpyMouseReport(buttons = 0)
-                }
         ) {
             Column(
-                Modifier.fillMaxSize().padding(24.dp),
+                Modifier.fillMaxSize().padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.Mouse, contentDescription = null, tint = RemoteAccent, modifier = Modifier.size(54.dp))
+                Surface(
+                    color = Color(0xFF202126),
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier.fillMaxWidth().weight(1f)
+                        .pointerInput(vm) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { vm.sendScrcpyMouseReport(buttons = 1) },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    vm.sendScrcpyMouseReport(
+                                        buttons = 1,
+                                        dx = (dragAmount.x * 1.35f).toInt().coerceIn(-127, 127),
+                                        dy = (dragAmount.y * 1.35f).toInt().coerceIn(-127, 127)
+                                    )
+                                },
+                                onDragEnd = { vm.sendScrcpyMouseReport(buttons = 0) },
+                                onDragCancel = { vm.sendScrcpyMouseReport(buttons = 0) }
+                            )
+                        }
+                        .clickable {
+                            vm.sendScrcpyMouseReport(buttons = 1)
+                            vm.sendScrcpyMouseReport(buttons = 0)
+                        }
+                ) {
+                    Column(
+                        Modifier.fillMaxSize().padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.Mouse, contentDescription = null, tint = RemoteAccent, modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text("觸控板", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(6.dp))
+                        Text("滑動移動｜點一下左鍵｜長按後拖曳",
+                            color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodySmall)
+                        Text("雙指上下滑動：捲動（下一階段加入）",
+                            color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
                 Spacer(Modifier.height(14.dp))
-                Text("觸控板", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                Text("ADB 裝置授權", color = Color.White, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(6.dp))
-                Text("滑動：移動滑鼠　點一下：左鍵",
+                Text(if (host.isBlank()) "請先在遙控器頁面選擇電視" else "目標電視：$host:5555",
                     color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(10.dp))
-                Text("ADB 裝置授權", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Text(if (host.isBlank()) "請先在遙控器頁面選擇電視" else "目標電視：$host:5555",
-                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
                         onClick = { vm.connectAdb() },
                         enabled = !connecting && host.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = RemoteAccent)
                     ) { Text(if (connecting) "連線中…" else "連線／授權") }
-                    OutlinedButton(onClick = { vm.disconnectAdb() }, enabled = !connecting) {
-                        Text("中斷")
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(onClick = { vm.installScrcpyServer() }, enabled = !connecting && host.isNotBlank()) {
-                    Text("部署滑鼠服務元件")
+                    OutlinedButton(onClick = { vm.disconnectAdb() }, enabled = !connecting) { Text("中斷") }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = { vm.installScrcpyServer() }, enabled = !connecting && host.isNotBlank()) {
+                        Text("部署元件")
+                    }
                     Button(
                         onClick = { vm.startScrcpyMouseService() },
                         enabled = !connecting && host.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = RemoteAccent)
-                    ) { Text("啟動滑鼠服務") }
-                    OutlinedButton(onClick = { vm.stopScrcpyMouseService() }) {
-                        Text("停止")
-                    }
+                    ) { Text("啟動滑鼠") }
+                    OutlinedButton(onClick = { vm.stopScrcpyMouseService() }) { Text("停止") }
                 }
-                Spacer(Modifier.height(14.dp))
-                Text(adbStatus, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
+                Text(adbStatus, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    "首次連線時，請確認電視畫面上的 ADB 授權提示。Android TV Remote 遙控連線與 ADB 授權是不同連線。",
-                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    if (ready) "遙控器已連線；滑鼠服務需另行完成 ADB 授權" else "請先完成電視配對與連線",
+                    if (ready) "遙控器已連線；滑鼠仍需 ADB 授權" else "請先完成電視配對與連線",
                     color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall
                 )
             }
