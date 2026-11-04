@@ -1,9 +1,8 @@
 package com.chi.tvremote.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -132,19 +131,72 @@ private fun MousePage(vm: RemoteViewModel) {
                     shape = RoundedCornerShape(22.dp),
                     modifier = Modifier.fillMaxWidth().weight(1f)
                         .pointerInput(vm) {
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = { vm.sendScrcpyMouseReport(buttons = 1) },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    vm.sendScrcpyMouseReport(
-                                        buttons = 1,
-                                        dx = (dragAmount.x * 1.35f).toInt().coerceIn(-127, 127),
-                                        dy = (dragAmount.y * 1.35f).toInt().coerceIn(-127, 127)
-                                    )
-                                },
-                                onDragEnd = { vm.sendScrcpyMouseReport(buttons = 0) },
-                                onDragCancel = { vm.sendScrcpyMouseReport(buttons = 0) }
-                            )
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                var previousPosition = down.position
+                                var previousCenterY: Float? = null
+                                var scrollRemainder = 0f
+                                var moved = false
+                                var longPress = false
+                                var multiTouch = false
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val pressed = event.changes.filter { it.pressed }
+                                    if (pressed.size >= 2) {
+                                        if (longPress) {
+                                            vm.sendScrcpyMouseReport(buttons = 0)
+                                            longPress = false
+                                        }
+                                        multiTouch = true
+                                        val centerY = pressed.map { it.position.y }.average().toFloat()
+                                        val previous = previousCenterY
+                                        if (previous != null) {
+                                            scrollRemainder += -(centerY - previous) / 24f
+                                            val wheel = scrollRemainder.toInt().coerceIn(-127, 127)
+                                            if (wheel != 0) {
+                                                vm.sendScrcpyMouseReport(wheel = wheel)
+                                                scrollRemainder -= wheel
+                                            }
+                                        }
+                                        previousCenterY = centerY
+                                        pressed.forEach { it.consume() }
+                                    } else if (!multiTouch) {
+                                        val change = event.changes.firstOrNull { it.id == down.id }
+                                        if (change != null) {
+                                            val delta = change.position - previousPosition
+                                            val elapsed = change.uptimeMillis - down.uptimeMillis
+                                            if (!moved && !longPress && elapsed >= viewConfiguration.longPressTimeoutMillis) {
+                                                longPress = true
+                                                vm.sendScrcpyMouseReport(buttons = 1)
+                                            }
+                                            val distanceSquared = delta.x * delta.x + delta.y * delta.y
+                                            if (!moved && distanceSquared > viewConfiguration.touchSlop * viewConfiguration.touchSlop) {
+                                                moved = true
+                                            }
+                                            if (moved && (delta.x != 0f || delta.y != 0f)) {
+                                                vm.sendScrcpyMouseReport(
+                                                    buttons = if (longPress) 1 else 0,
+                                                    dx = (delta.x * 1.35f).toInt().coerceIn(-127, 127),
+                                                    dy = (delta.y * 1.35f).toInt().coerceIn(-127, 127)
+                                                )
+                                                change.consume()
+                                            }
+                                            previousPosition = change.position
+                                            if (!change.pressed) {
+                                                if (longPress) {
+                                                    vm.sendScrcpyMouseReport(buttons = 0)
+                                                } else if (!moved) {
+                                                    vm.sendScrcpyMouseReport(buttons = 1)
+                                                    vm.sendScrcpyMouseReport(buttons = 0)
+                                                }
+                                                change.consume()
+                                                break
+                                            }
+                                        }
+                                    }
+                                    if (event.changes.none { it.pressed }) break
+                                }
+                            }
                         }
                         .pointerInput(vm) {
                             awaitEachGesture {
@@ -171,10 +223,6 @@ private fun MousePage(vm: RemoteViewModel) {
                                     }
                                 } while (event.changes.any { it.pressed })
                             }
-                        }
-                        .clickable {
-                            vm.sendScrcpyMouseReport(buttons = 1)
-                            vm.sendScrcpyMouseReport(buttons = 0)
                         }
                 ) {
                     Column(
