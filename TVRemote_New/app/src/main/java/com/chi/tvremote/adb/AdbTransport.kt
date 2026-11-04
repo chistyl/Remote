@@ -65,7 +65,6 @@ class AdbTransport private constructor(
         return Packet(decoded.command, decoded.arg0, decoded.arg1, decoded.payload)
     }
 
-    @Synchronized
     @Throws(IOException::class)
     fun shell(command: String, timeoutMs: Int = 10000): String {
         if (!connected) throw IOException("ADB 尚未連線")
