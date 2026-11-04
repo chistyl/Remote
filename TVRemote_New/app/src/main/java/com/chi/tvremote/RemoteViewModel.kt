@@ -15,6 +15,8 @@ import com.chi.tvremote.protocol.TlsFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.asStateFlow
 
 
@@ -24,6 +26,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     private val tls = TlsFactory(certs)
     val pairing = PairingClient(certs, tls)
     val remote = RemoteClient(tls)
+    private val textEditMutex = Mutex()
 
     private val _language = MutableStateFlow(prefs.getString("language", "zh-TW") ?: "zh-TW")
     val language: StateFlow<String> = _language
@@ -230,6 +233,31 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     fun sendText(value: String, onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch { onResult(remote.sendText(value)) }
+    }
+
+    /** Sends only committed text changes from the phone IME, preserving TV-side cursor order. */
+    fun sendRealtimeTextDelta(previous: String, current: String, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val sent = textEditMutex.withLock {
+                if (!remote.ready.value || !remote.textInputReady.value) return@withLock false
+                when {
+                    current.startsWith(previous) -> {
+                        val added = current.substring(previous.length)
+                        added.isEmpty() || remote.sendText(added)
+                    }
+                    previous.startsWith(current) -> {
+                        val removed = previous.length - current.length
+                        repeat(removed) { remote.sendKey(com.chi.tvremote.protocol.KeyCodes.DEL) }
+                        true
+                    }
+                    else -> {
+                        repeat(previous.length) { remote.sendKey(com.chi.tvremote.protocol.KeyCodes.DEL) }
+                        current.isEmpty() || remote.sendText(current)
+                    }
+                }
+            }
+            onResult(sent)
+        }
     }
 
     fun setSensitivity(value: Float) { _sensitivity.value = value.coerceIn(0.5f, 2.0f) }
