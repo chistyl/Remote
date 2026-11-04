@@ -198,32 +198,6 @@ private fun MousePage(vm: RemoteViewModel) {
                                 }
                             }
                         }
-                        .pointerInput(vm) {
-                            awaitEachGesture {
-                                var previousY: Float? = null
-                                var scrollRemainder = 0f
-                                do {
-                                    val event = awaitPointerEvent()
-                                    val pressed = event.changes.filter { it.pressed }
-                                    if (pressed.size >= 2) {
-                                        val centerY = pressed.map { it.position.y }.average().toFloat()
-                                        val previous = previousY
-                                        if (previous != null) {
-                                            scrollRemainder += -(centerY - previous) / 24f
-                                            val wheel = scrollRemainder.toInt().coerceIn(-127, 127)
-                                            if (wheel != 0) {
-                                                vm.sendScrcpyMouseReport(wheel = wheel)
-                                                scrollRemainder -= wheel
-                                            }
-                                        }
-                                        previousY = centerY
-                                        pressed.forEach { it.consume() }
-                                    } else {
-                                        previousY = null
-                                    }
-                                } while (event.changes.any { it.pressed })
-                            }
-                        }
                 ) {
                     Column(
                         Modifier.fillMaxSize().padding(16.dp),
