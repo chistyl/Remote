@@ -13,6 +13,8 @@ import com.chi.tvremote.protocol.RemoteClient
 import com.chi.tvremote.protocol.ServiceResolveEpoch
 import com.chi.tvremote.protocol.TlsFactory
 import com.chi.tvremote.adb.AdbTransport
+import com.chi.tvremote.adb.AdbDuplexChannel
+import com.chi.tvremote.adb.ScrcpyControlProtocol
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -35,6 +37,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     private val textEditMutex = Mutex()
 
     private var adbTransport: AdbTransport? = null
+    private var scrcpyMouseChannel: AdbDuplexChannel? = null
     private val adbMutex = Mutex()
     @Volatile private var adbGeneration = 0L
     private val adbPendingSocket = AtomicReference<Socket?>(null)
@@ -107,6 +110,75 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                 _adbStatus.value = "scrcpy Server 5.0.1 已部署；尚未啟動滑鼠服務"
             } catch (e: Exception) {
                 _adbStatus.value = e.message ?: "scrcpy Server 部署失敗"
+            }
+        }
+    }
+    /**
+     * Starts scrcpy in control-only mode and creates its official UHID mouse.
+     * Requires ADB authorization and a TV kernel exposing /dev/uhid.
+     */
+    fun startScrcpyMouseService() {
+        if (_adbConnecting.value) return
+        viewModelScope.launch {
+            _adbStatus.value = "正在啟動電視端滑鼠服務…"
+            try {
+                withContext(Dispatchers.IO) {
+                    adbMutex.withLock {
+                        val transport = adbTransport ?: throw java.io.IOException("請先完成 ADB 連線與電視授權")
+                        scrcpyMouseChannel?.close()
+                        scrcpyMouseChannel = null
+                        val scid = ((System.currentTimeMillis() and 0x7fffffffL).toInt()).coerceAtLeast(1)
+                        val scidHex = "%08x".format(java.util.Locale.ROOT, scid)
+                        val command = "CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 5.0.1 scid=$scidHex log_level=info video=false audio=false control=true tunnel_forward=false send_dummy_byte=false cleanup=true >/dev/null 2>&1 &"
+                        transport.shell(command, timeoutMs = 10000)
+                        val socketName = "scrcpy_$scidHex"
+                        var channel: AdbDuplexChannel? = null
+                        var lastError: Exception? = null
+                        repeat(8) {
+                            if (channel == null) {
+                                try { channel = transport.openLocalAbstract(socketName, timeoutMs = 2500) }
+                                catch (e: Exception) { lastError = e; Thread.sleep(350) }
+                            }
+                        }
+                        val opened = channel ?: throw java.io.IOException("scrcpy 控制通道無法建立：${lastError?.message ?: "電視端服務未回應"}", lastError)
+                        try {
+                            opened.output.write(ScrcpyControlProtocol.mouseUhidCreate())
+                            opened.output.flush()
+                            scrcpyMouseChannel = opened
+                        } catch (e: Exception) { opened.close(); throw e }
+                    }
+                }
+                _adbStatus.value = "滑鼠服務已啟動；若電視核心不支援 UHID，將無法建立滑鼠裝置"
+            } catch (e: Exception) { _adbStatus.value = e.message ?: "滑鼠服務啟動失敗" }
+        }
+    }
+
+    fun stopScrcpyMouseService() {
+        viewModelScope.launch(Dispatchers.IO) {
+            adbMutex.withLock {
+                try {
+                    scrcpyMouseChannel?.output?.write(ScrcpyControlProtocol.uhidDestroy(ScrcpyControlProtocol.HID_ID_MOUSE))
+                    scrcpyMouseChannel?.close()
+                } catch (_: Exception) {
+                } finally { scrcpyMouseChannel = null }
+            }
+            _adbStatus.value = "滑鼠服務已停止"
+        }
+    }
+
+    /** Sends a relative HID mouse report after the UHID device has been created. */
+    fun sendScrcpyMouseReport(buttons: Int = 0, dx: Int = 0, dy: Int = 0, wheel: Int = 0, horizontal: Int = 0) {
+        viewModelScope.launch(Dispatchers.IO) {
+            adbMutex.withLock {
+                val channel = scrcpyMouseChannel ?: return@withLock
+                try {
+                    channel.output.write(ScrcpyControlProtocol.mouseUhidInput(buttons, dx, dy, wheel, horizontal))
+                    channel.output.flush()
+                } catch (e: Exception) {
+                    _adbStatus.value = e.message ?: "滑鼠資料傳送失敗"
+                    try { channel.close() } catch (_: Exception) {}
+                    scrcpyMouseChannel = null
+                }
             }
         }
     }
@@ -404,6 +476,8 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         remote.disconnect()
         try { adbPendingSocket.getAndSet(null)?.close() } catch (_: Exception) {}
+        try { scrcpyMouseChannel?.close() } catch (_: Exception) {}
+        scrcpyMouseChannel = null
         try { adbTransport?.close() } catch (_: Exception) {}
         adbTransport = null
         pairing.cancel()
