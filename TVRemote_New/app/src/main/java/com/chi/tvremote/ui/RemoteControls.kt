@@ -60,7 +60,7 @@ fun CircularDPad(
         ) {
             RepeatDirectionButton(Icons.Default.KeyboardArrowLeft, "左", KeyCodes.DPAD_LEFT, enabled, repeatEnabled, onKey)
             Surface(
-                modifier = Modifier.size(76.dp).combinedClickable(
+                modifier = Modifier.size(88.dp).combinedClickable(
                     enabled = enabled,
                     onClick = { onKey(KeyCodes.DPAD_CENTER) },
                     onLongClick = { onLongKey(KeyCodes.DPAD_CENTER) }
@@ -92,7 +92,7 @@ private fun RepeatDirectionButton(
 ) {
     val scope = rememberCoroutineScope()
     Surface(
-        modifier = Modifier.size(64.dp)
+        modifier = Modifier.size(76.dp)
             .repeatKeyPress(scope, enabled, repeatEnabled) { onKey(keyCode) }
             .semantics { role = Role.Button },
         shape = CircleShape,
@@ -147,7 +147,7 @@ fun RepeatActionButton(
 ) {
     val scope = rememberCoroutineScope()
     Surface(
-        modifier = modifier.height(48.dp)
+        modifier = modifier.height(58.dp)
             .repeatKeyPress(scope, enabled, repeatEnabled, onPress)
             .semantics { role = Role.Button },
         shape = RoundedCornerShape(14.dp),
@@ -170,7 +170,7 @@ fun RemoteActionButton(
     onLongClick: (() -> Unit)? = null
 ) {
     Surface(
-        modifier = modifier.height(62.dp).combinedClickable(
+        modifier = modifier.height(76.dp).combinedClickable(
             enabled = enabled, onClick = onClick, onLongClick = onLongClick
         ),
         shape = RoundedCornerShape(16.dp), color = RemotePanel,
@@ -181,9 +181,9 @@ fun RemoteActionButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, contentDescription = label, tint = RemoteAccent, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = label, tint = RemoteAccent, modifier = Modifier.size(27.dp))
             Spacer(Modifier.height(3.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, color = Color(0xFF9AA3B1))
         }
     }
 }
