@@ -4,14 +4,16 @@ import java.security.MessageDigest
 
 /** Pure Android TV Remote v2 pairing wire helpers, kept separate for regression tests. */
 internal object PairingProtocol {
-    data class Ack(val fields: Set<Int>, val status: Int) {
-        fun hasMessage(type: Int): Boolean = type in fields
+    data class Ack(val type: Int, val status: Int) {
+        fun hasMessage(expectedType: Int): Boolean = type == expectedType
     }
 
+    /** OuterMessage: protocol_version=2, status=200, type, and serialized payload. */
     fun envelope(type: Int, body: ByteArray): ByteArray =
-        ProtoCodec.varintField(1, 2L) + // Pairing protocol version (must be 2)
+        ProtoCodec.varintField(1, 2L) +
             ProtoCodec.varintField(2, 200L) +
-            ProtoCodec.messageField(type, body)
+            ProtoCodec.varintField(3, type.toLong()) +
+            ProtoCodec.bytesField(4, body)
 
     fun request(clientName: String): ByteArray =
         ProtoCodec.stringField(1, "atvremote") + ProtoCodec.stringField(2, clientName)
@@ -28,24 +30,22 @@ internal object PairingProtocol {
     }
 
     fun parseAck(payload: ByteArray): Ack {
+        val version = ProtoCodec.firstVarintField(payload, 1)
         val rawStatus = ProtoCodec.firstVarintField(payload, 2)
-        // Pairing envelopes identify their response by the presence of a
-        // length-delimited message field (11, 21, 31 or 41), not a field-3 type.
-        val fields = topLevelFields(payload)
-        // The reference implementation treats an omitted status as 200.
+        val rawType = ProtoCodec.firstVarintField(payload, 3)
+        require(version == 2L) { "配對協定版本不支援：$version" }
         val status = if (rawStatus < 0) 200L else rawStatus
         require(status == 200L) { "電視拒絕配對要求（狀態 $status）" }
-        return Ack(fields, status.toInt())
+        require(rawType in 0..Int.MAX_VALUE.toLong()) { "電視配對回應缺少訊息類型" }
+        require(hasBytesField(payload, 4)) { "電視配對回應缺少訊息內容" }
+        return Ack(rawType.toInt(), status.toInt())
     }
 
-    private fun topLevelFields(payload: ByteArray): Set<Int> {
-        val fields = linkedSetOf<Int>()
+    private fun hasBytesField(payload: ByteArray, wanted: Int): Boolean {
         val cursor = intArrayOf(0)
         while (cursor[0] < payload.size) {
             val tag = ProtoCodec.decodeVarint(payload, cursor)
             val field = (tag ushr 3).toInt()
-            require(field > 0) { "配對回應包含無效欄位標籤" }
-            fields += field
             when ((tag and 7L).toInt()) {
                 0 -> ProtoCodec.decodeVarint(payload, cursor)
                 1 -> {
@@ -55,6 +55,7 @@ internal object PairingProtocol {
                 2 -> {
                     val length = ProtoCodec.decodeVarint(payload, cursor)
                     require(length in 0..(payload.size - cursor[0]).toLong()) { "配對回應長度錯誤" }
+                    if (field == wanted) return true
                     cursor[0] += length.toInt()
                 }
                 5 -> {
@@ -64,7 +65,7 @@ internal object PairingProtocol {
                 else -> throw IllegalArgumentException("配對回應包含不支援的 protobuf wire type")
             }
         }
-        return fields
+        return false
     }
 
     /**
