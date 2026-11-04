@@ -11,8 +11,8 @@ android {
         applicationId = "com.chi.tvremote.next"
         minSdk = 21
         targetSdk = 34
-        versionCode = 26
-        versionName = "1.1.14"
+        versionCode = 27
+        versionName = "1.1.15"
     }
 
     buildTypes {
