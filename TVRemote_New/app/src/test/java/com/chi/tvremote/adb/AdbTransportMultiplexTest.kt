@@ -141,12 +141,8 @@ class AdbTransportMultiplexTest {
         try {
             val failing = workers.submit<String> { transport.shell("echo failing", 5000) }
             val surviving = workers.submit<String> { transport.shell("echo surviving", 5000) }
-            try {
-                failing.get(6, TimeUnit.SECONDS)
-                throw AssertionError("closed stream should fail")
-            } catch (expected: java.util.concurrent.ExecutionException) {
-                assertTrue(expected.cause is java.io.IOException)
-            }
+            // A clean peer CLSE ends that shell command normally with no output.
+            assertEquals("", failing.get(6, TimeUnit.SECONDS))
             assertEquals("survived", surviving.get(6, TimeUnit.SECONDS))
             assertTrue(serverResult.get(2, TimeUnit.SECONDS))
         } finally {
