@@ -140,6 +140,10 @@ private fun MousePage(vm: RemoteViewModel) {
                         Text("中斷")
                     }
                 }
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = { vm.installScrcpyServer() }, enabled = !connecting && host.isNotBlank()) {
+                    Text("部署滑鼠服務元件")
+                }
                 Spacer(Modifier.height(14.dp))
                 Text(adbStatus, color = Color(0xFFD5D6DC), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
