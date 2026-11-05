@@ -24,7 +24,7 @@ fun TouchpadControl(vm: RemoteViewModel, modifier: Modifier = Modifier, compact:
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
-            Modifier.fillMaxWidth().height(if (compact) 170.dp else 224.dp)
+            Modifier.fillMaxWidth().height(if (compact) 120.dp else 224.dp)
                 .background(Color(0xFF171B22), RoundedCornerShape(24.dp))
                 .pointerInput(connected, sensitivity) {
                     detectDragGestures(
@@ -57,7 +57,7 @@ fun TouchpadControl(vm: RemoteViewModel, modifier: Modifier = Modifier, compact:
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(t("touch_surface"), color = Color(0xFF67D7FF), style = MaterialTheme.typography.titleLarge)
+                Text(t("touch_surface"), color = Color(0xFF67D7FF), style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge)
                 Text(t("swipe_directions"), color = Color(0xFF9EB0C2))
                 Text(t("tap_confirm"), color = Color(0xFF71869B), style = MaterialTheme.typography.bodySmall)
             }
@@ -66,7 +66,7 @@ fun TouchpadControl(vm: RemoteViewModel, modifier: Modifier = Modifier, compact:
             OutlinedButton(onClick = { if (connected) vm.sendKey(KeyCodes.BACK) }, modifier = Modifier.weight(1f).height(if (compact) 34.dp else 44.dp), enabled = connected) {
                 Text(t("back"))
             }
-            OutlinedButton(onClick = { if (connected) vm.sendKey(KeyCodes.DPAD_CENTER) }, modifier = Modifier.weight(1f).height(44.dp), enabled = connected) {
+            OutlinedButton(onClick = { if (connected) vm.sendKey(KeyCodes.DPAD_CENTER) }, modifier = Modifier.weight(1f).height(if (compact) 34.dp else 44.dp), enabled = connected) {
                 Text("OK")
             }
         }
