@@ -144,7 +144,7 @@ private fun TouchpadPage(vm: RemoteViewModel) {
                                 if (abs(dragX) > abs(dragY)) {
                                     val key = if (dragX > 0) KeyCodes.DPAD_RIGHT else KeyCodes.DPAD_LEFT
                                     val steps = (abs(dragX) / swipeThresholdPx).toInt().coerceIn(1, 8)
-                                    repeat(steps) { vm.sendKey(key) }
+                                    vm.sendKeyRepeated(key, steps)
                                 } else {
                                     val key = if (dragY > 0) KeyCodes.DPAD_DOWN else KeyCodes.DPAD_UP
                                     val steps = (abs(dragY) / swipeThresholdPx).toInt().coerceIn(1, 8)
