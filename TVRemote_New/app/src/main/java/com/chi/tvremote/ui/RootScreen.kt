@@ -68,7 +68,7 @@ fun RootScreen(vm: RemoteViewModel) {
             Box(Modifier.fillMaxSize().padding(padding)) {
                 when (tab) {
                     0 -> PairingScreen(vm, onPaired = { vm.rememberCurrentTv(); vm.connect(); tab = 1 }, onConnectSaved = { address -> vm.reconnectTo(address); tab = 1 })
-                    else -> ThreePageRemoteScreen(vm)
+                    else -> TwoPageRemoteScreen(vm)
                 }
             }
         }
