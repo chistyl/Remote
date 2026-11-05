@@ -113,6 +113,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
+        // Keep the original VOL/CH rocker layout untouched; compact only surrounding sections.
         val compact = maxHeight < 700.dp
         val mediaButton = if (compact) 36.dp else 42.dp
         val padSize = if (compact) (maxHeight * 0.29f).coerceIn(170.dp, 228.dp) else 250.dp
