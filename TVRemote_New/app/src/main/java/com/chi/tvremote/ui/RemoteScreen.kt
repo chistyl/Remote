@@ -13,6 +13,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
@@ -125,11 +130,11 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MediaControlAction("⏮", "上一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_PREV) }
-                MediaControlAction("◀◀", "倒轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
-                MediaControlAction("▶Ⅱ", "播放／暫停", ready, Modifier.weight(1.12f), mediaButton + 8.dp, emphasized = true) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
-                MediaControlAction("▶▶", "快轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
-                MediaControlAction("⏭", "下一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
+                MediaControlAction(Icons.Default.SkipPrevious, "上一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_PREV) }
+                MediaControlAction(Icons.Default.FastRewind, "倒轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
+                MediaControlAction(Icons.Default.PlayArrow, "播放／暫停", ready, Modifier.weight(1.12f), mediaButton + 8.dp, emphasized = true) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
+                MediaControlAction(Icons.Default.FastForward, "快轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
+                MediaControlAction(Icons.Default.SkipNext, "下一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
             }
 
             if (error != null || volumeInfo != null) {
@@ -361,7 +366,7 @@ private fun ReferenceCircleAction(label: String, enabled: Boolean, modifier: Mod
 
 @Composable
 private fun MediaControlAction(
-    symbol: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
     modifier: Modifier,
@@ -383,10 +388,11 @@ private fun MediaControlAction(
             contentColor = Color.White
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(
-                    symbol,
-                    style = if (emphasized) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    modifier = Modifier.size(if (emphasized) 29.dp else 23.dp),
+                    tint = Color.White
                 )
             }
         }
