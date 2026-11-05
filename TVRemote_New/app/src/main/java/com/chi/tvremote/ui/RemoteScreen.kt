@@ -118,12 +118,29 @@ fun RemoteScreen(vm: RemoteViewModel) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            ReferenceCircleAction("⏮", ready) { vm.sendKey(KeyCodes.MEDIA_PREV) }
-            ReferenceCircleAction("◀◀", ready) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
-            ReferenceCircleAction("▶Ⅱ", ready) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
-            ReferenceCircleAction("▶▶", ready) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
-            ReferenceCircleAction("⏭", ready) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
+        // Dedicated media strip: five equally spaced controls with a slightly
+        // emphasized play/pause action. Fixed button sizes prevent the glyphs
+        // from expanding into one oversized control on narrow screens.
+        Row(
+            Modifier.fillMaxWidth().height(76.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MediaControlAction("⏮", "上一首", ready, Modifier.weight(1f), 48.dp) {
+                vm.sendKey(KeyCodes.MEDIA_PREV)
+            }
+            MediaControlAction("◀◀", "倒轉", ready, Modifier.weight(1f), 48.dp) {
+                vm.sendKey(KeyCodes.MEDIA_REWIND)
+            }
+            MediaControlAction("▶Ⅱ", "播放／暫停", ready, Modifier.weight(1.15f), 58.dp, emphasized = true) {
+                vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE)
+            }
+            MediaControlAction("▶▶", "快轉", ready, Modifier.weight(1f), 48.dp) {
+                vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD)
+            }
+            MediaControlAction("⏭", "下一首", ready, Modifier.weight(1f), 48.dp) {
+                vm.sendKey(KeyCodes.MEDIA_NEXT)
+            }
         }
         if (!ready) {
             Text(if (transportConnected) t("connecting") else t("disconnected"), color = Color(0xFFB7B7B7), style = MaterialTheme.typography.labelSmall)
@@ -369,5 +386,46 @@ private fun ReferenceCircleAction(label: String, enabled: Boolean, modifier: Mod
         Box(contentAlignment = Alignment.Center) {
             Text(label, style = MaterialTheme.typography.headlineSmall, color = Color.White)
         }
+    }
+}
+
+@Composable
+private fun MediaControlAction(
+    symbol: String,
+    label: String,
+    enabled: Boolean,
+    modifier: Modifier,
+    buttonSize: androidx.compose.ui.unit.Dp,
+    emphasized: Boolean = false,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(buttonSize),
+            shape = androidx.compose.foundation.shape.CircleShape,
+            color = if (emphasized) Color(0xFF6554B8) else Color(0xFF353535),
+            contentColor = Color.White
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    symbol,
+                    style = if (emphasized) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+            }
+        }
+        Spacer(Modifier.height(3.dp))
+        Text(
+            label,
+            color = Color(0xFFB8BBC4),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1
+        )
     }
 }
