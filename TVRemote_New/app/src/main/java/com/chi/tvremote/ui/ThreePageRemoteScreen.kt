@@ -1,22 +1,25 @@
 package com.chi.tvremote.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mouse
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.chi.tvremote.RemoteViewModel
 import com.chi.tvremote.protocol.KeyCodes
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private val RemoteBg = Color(0xFF101114)
 private val RemoteCard = Color(0xFF24262B)
@@ -35,8 +38,7 @@ fun ThreePageRemoteScreen(vm: RemoteViewModel) {
             when (page) {
                 0 -> RemoteScreen(vm)
                 1 -> NumberPadPage(vm)
-                1 -> NumberPadPage(vm)
-                else -> MousePage()
+                else -> TouchpadPage(vm)
             }
         }
         Row(
@@ -100,36 +102,104 @@ private fun NumberPadPage(vm: RemoteViewModel) {
     }
 }
 
-
 @Composable
-private fun MousePage() {
+private fun TouchpadPage(vm: RemoteViewModel) {
+    val ready by vm.remote.ready.collectAsState()
+    val density = LocalDensity.current
+    val swipeThresholdPx = with(density) { 34.dp.toPx() }
+    var dragX by remember { mutableFloatStateOf(0f) }
+    var dragY by remember { mutableFloatStateOf(0f) }
+
     Column(
-        Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 24.dp, vertical = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        Modifier.fillMaxSize().background(RemoteBg).padding(horizontal = 22.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("滑鼠控制", color = Color.White, style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(20.dp))
+        Text("觸控板", color = Color.White, style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(5.dp))
+        Text(
+            if (ready) "滑動移動焦點・點擊確認・長按持續操作" else "請先連線電視",
+            color = Color(0xFF9DA0AA),
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(12.dp))
+
         Surface(
-            color = Color(0xFF353535),
-            shape = RoundedCornerShape(28.dp),
+            color = RemoteCard,
+            shape = RoundedCornerShape(26.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF373941)),
             modifier = Modifier.fillMaxWidth().weight(1f)
+                .pointerInput(ready, swipeThresholdPx) {
+                    detectDragGestures(
+                        onDragStart = { dragX = 0f; dragY = 0f },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            dragX += amount.x
+                            dragY += amount.y
+                        },
+                        onDragEnd = {
+                            if (ready && (abs(dragX) >= swipeThresholdPx || abs(dragY) >= swipeThresholdPx)) {
+                                if (abs(dragX) > abs(dragY)) {
+                                    vm.sendKey(if (dragX > 0) KeyCodes.DPAD_RIGHT else KeyCodes.DPAD_LEFT)
+                                } else {
+                                    vm.sendKey(if (dragY > 0) KeyCodes.DPAD_DOWN else KeyCodes.DPAD_UP)
+                                }
+                            }
+                            dragX = 0f
+                            dragY = 0f
+                        },
+                        onDragCancel = { dragX = 0f; dragY = 0f }
+                    )
+                }
+                .pointerInput(ready) {
+                    detectTapGestures(
+                        onTap = { if (ready) vm.sendKey(KeyCodes.DPAD_CENTER) },
+                        onDoubleTap = { if (ready) vm.sendKey(KeyCodes.ENTER) },
+                        onLongPress = { if (ready) vm.sendLongKey(KeyCodes.DPAD_CENTER) }
+                    )
+                }
         ) {
             Column(
-                Modifier.fillMaxSize().padding(24.dp),
+                Modifier.fillMaxSize().padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.Mouse, contentDescription = null, tint = Color(0xFF8B78FF), modifier = Modifier.size(54.dp))
-                Spacer(Modifier.height(16.dp))
-                Text("滑鼠觸控區", color = Color.White, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(8.dp))
-                Text("滑鼠游標控制需要建立電視端 ADB／虛擬 HID 連線",
-                    color = Color(0xFFB8BBC4), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(6.dp))
-                Text("目前尚未啟用真正的游標移動與點擊，避免以方向鍵模擬滑鼠。",
-                    color = Color(0xFF92959D), style = MaterialTheme.typography.bodySmall)
+                Text("觸 控 操 作 區", color = Color(0xFFBFC2CC), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(12.dp))
+                Text("↑   ↓   ←   →", color = RemoteAccent, style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(10.dp))
+                Text("單指滑動控制方向", color = Color(0xFF9296A1), style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(5.dp))
+                Text("點一下：OK　雙擊：Enter　長按：持續確認", color = Color(0xFF9296A1), style = MaterialTheme.typography.bodySmall)
             }
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TouchpadActionButton("返回", KeyCodes.BACK, ready, Modifier.weight(1f), vm)
+            TouchpadActionButton("首頁", KeyCodes.HOME, ready, Modifier.weight(1f), vm)
+        }
+    }
+}
+
+@Composable
+private fun TouchpadActionButton(
+    label: String,
+    keyCode: Int,
+    enabled: Boolean,
+    modifier: Modifier,
+    vm: RemoteViewModel
+) {
+    Surface(
+        onClick = { vm.sendKey(keyCode) },
+        enabled = enabled,
+        color = Color(0xFF292B31),
+        contentColor = Color.White,
+        shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF41434B)),
+        modifier = modifier.height(48.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(label, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
