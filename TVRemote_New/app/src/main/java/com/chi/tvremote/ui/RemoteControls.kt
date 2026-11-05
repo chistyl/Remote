@@ -44,11 +44,13 @@ fun CircularDPad(
     repeatEnabled: Boolean,
     onKey: (Int) -> Unit,
     onLongKey: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 340.dp
 ) {
+    val scale = size.value / 340f
     Box(
         modifier = modifier
-            .size(340.dp)
+            .size(size)
             .background(Color(0xFF353535), CircleShape)
             .then(Modifier),
         contentAlignment = Alignment.Center
@@ -63,7 +65,7 @@ fun CircularDPad(
             color = Color.Transparent,
             shape = CircleShape,
             border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF477DB5)),
-            modifier = Modifier.size(94.dp)
+            modifier = Modifier.size((94f * scale).dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Box(Modifier.size(18.dp).background(Color(0xFF92979D), CircleShape))
@@ -72,7 +74,7 @@ fun CircularDPad(
         @Composable
         fun Direction(modifier: Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, code: Int) {
             Surface(
-                modifier = modifier.size(76.dp).combinedClickable(
+                modifier = modifier.size((76f * scale).dp).combinedClickable(
                     enabled = enabled,
                     onClick = { onKey(code) },
                     onLongClick = { if (repeatEnabled) onLongKey(code) }
@@ -82,16 +84,16 @@ fun CircularDPad(
                 shape = CircleShape
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = label, modifier = Modifier.size(36.dp))
+                    Icon(icon, contentDescription = label, modifier = Modifier.size((36f * scale).dp))
                 }
             }
         }
-        Direction(Modifier.align(Alignment.TopCenter).padding(top = 22.dp), Icons.Default.KeyboardArrowUp, "上", KeyCodes.DPAD_UP)
-        Direction(Modifier.align(Alignment.CenterStart).padding(start = 22.dp), Icons.Default.KeyboardArrowLeft, "左", KeyCodes.DPAD_LEFT)
-        Direction(Modifier.align(Alignment.CenterEnd).padding(end = 22.dp), Icons.Default.KeyboardArrowRight, "右", KeyCodes.DPAD_RIGHT)
-        Direction(Modifier.align(Alignment.BottomCenter).padding(bottom = 22.dp), Icons.Default.KeyboardArrowDown, "下", KeyCodes.DPAD_DOWN)
+        Direction(Modifier.align(Alignment.TopCenter).padding(top = (22f * scale).dp), Icons.Default.KeyboardArrowUp, "上", KeyCodes.DPAD_UP)
+        Direction(Modifier.align(Alignment.CenterStart).padding(start = (22f * scale).dp), Icons.Default.KeyboardArrowLeft, "左", KeyCodes.DPAD_LEFT)
+        Direction(Modifier.align(Alignment.CenterEnd).padding(end = (22f * scale).dp), Icons.Default.KeyboardArrowRight, "右", KeyCodes.DPAD_RIGHT)
+        Direction(Modifier.align(Alignment.BottomCenter).padding(bottom = (22f * scale).dp), Icons.Default.KeyboardArrowDown, "下", KeyCodes.DPAD_DOWN)
         Surface(
-            modifier = Modifier.size(76.dp).combinedClickable(enabled = enabled, onClick = { onKey(KeyCodes.DPAD_CENTER) }, onLongClick = { onLongKey(KeyCodes.DPAD_CENTER) }),
+            modifier = Modifier.size((76f * scale).dp).combinedClickable(enabled = enabled, onClick = { onKey(KeyCodes.DPAD_CENTER) }, onLongClick = { onLongKey(KeyCodes.DPAD_CENTER) }),
             shape = CircleShape, color = Color.Transparent
         ) {}
     }
