@@ -114,26 +114,27 @@ fun RemoteScreen(vm: RemoteViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val compact = maxHeight < 700.dp
-        val padSize = if (compact) (maxHeight * 0.31f).coerceIn(190.dp, 240.dp) else 260.dp
+        val mediaButton = if (compact) 36.dp else 42.dp
+        val padSize = if (compact) (maxHeight * 0.29f).coerceIn(170.dp, 228.dp) else 250.dp
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                Modifier.fillMaxWidth().height(58.dp),
+                Modifier.fillMaxWidth().height(if (compact) 52.dp else 56.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MediaControlAction("⏮", "上一首", ready, Modifier.weight(1f), 42.dp) { vm.sendKey(KeyCodes.MEDIA_PREV) }
-                MediaControlAction("◀◀", "倒轉", ready, Modifier.weight(1f), 42.dp) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
-                MediaControlAction("▶Ⅱ", "播放／暫停", ready, Modifier.weight(1.12f), 50.dp, emphasized = true) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
-                MediaControlAction("▶▶", "快轉", ready, Modifier.weight(1f), 42.dp) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
-                MediaControlAction("⏭", "下一首", ready, Modifier.weight(1f), 42.dp) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
+                MediaControlAction("⏮", "上一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_PREV) }
+                MediaControlAction("◀◀", "倒轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_REWIND) }
+                MediaControlAction("▶Ⅱ", "播放／暫停", ready, Modifier.weight(1.12f), mediaButton + 8.dp, emphasized = true) { vm.sendKey(KeyCodes.MEDIA_PLAY_PAUSE) }
+                MediaControlAction("▶▶", "快轉", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_FAST_FORWARD) }
+                MediaControlAction("⏭", "下一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
             }
 
             Row(
-                Modifier.fillMaxWidth().height(20.dp),
+                Modifier.fillMaxWidth().height(18.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -152,8 +153,8 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
 
             Row(
-                Modifier.fillMaxWidth().height(36.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.fillMaxWidth().height(if (compact) 32.dp else 36.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
@@ -231,7 +232,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
 
             Row(
-                Modifier.fillMaxWidth().height(40.dp),
+                Modifier.fillMaxWidth().height(if (compact) 36.dp else 40.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -295,7 +296,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 }
             }
             Row(
-                Modifier.fillMaxWidth().height(26.dp),
+                Modifier.fillMaxWidth().height(24.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
