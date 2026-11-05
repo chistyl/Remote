@@ -1,6 +1,8 @@
 package com.chi.tvremote.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -31,7 +33,10 @@ fun PairingScreen(vm: RemoteViewModel, onPaired: () -> Unit, onConnectSaved: (St
         if (state == PairingClient.State.Paired) { showCode = false; onPaired() }
     }
 
-    Column(Modifier.fillMaxSize().padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text(t("connect_tv"), style = MaterialTheme.typography.headlineSmall)
         Text(t("wifi_help"), color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (savedDevices.isNotEmpty()) {
