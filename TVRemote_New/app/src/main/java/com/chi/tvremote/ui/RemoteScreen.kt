@@ -156,14 +156,14 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     onClick = { vm.setRemoteControlMode(0) },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     shape = RoundedCornerShape(11.dp),
-                    color = if (controlMode == 0) Color(0xFF4B455A) else Color(0xFF25262B),
+                    color = if (controlMode == 0) Color(0xFF174B65) else Color(0xFF111C2A),
                     contentColor = Color.White
                 ) { Box(contentAlignment = Alignment.Center) { Text(t("dpad_mode"), style = MaterialTheme.typography.labelMedium) } }
                 Surface(
                     onClick = { vm.setRemoteControlMode(1) },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     shape = RoundedCornerShape(11.dp),
-                    color = if (controlMode == 1) Color(0xFF4B455A) else Color(0xFF25262B),
+                    color = if (controlMode == 1) Color(0xFF174B65) else Color(0xFF111C2A),
                     contentColor = Color.White
                 ) { Box(contentAlignment = Alignment.Center) { Text(t("touchpad_mode"), style = MaterialTheme.typography.labelMedium) } }
                 Row(
@@ -199,7 +199,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
-                    Modifier.width(52.dp).fillMaxHeight().background(Color(0xFF353535), RoundedCornerShape(22.dp)),
+                    Modifier.width(52.dp).fillMaxHeight().background(Color(0xFF172638), RoundedCornerShape(22.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -220,7 +220,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     }
                 }
                 Column(
-                    Modifier.width(52.dp).fillMaxHeight().background(Color(0xFF353535), RoundedCornerShape(22.dp)),
+                    Modifier.width(52.dp).fillMaxHeight().background(Color(0xFF172638), RoundedCornerShape(22.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -291,7 +291,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     },
                     enabled = ready && if (textMode == 1) textValue.text.isNotEmpty() && textInputReady else textValue.text.isNotEmpty()
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = if (textMode == 1) t("send_text") else t("text_clear"), tint = Color(0xFF8B78FF))
+                    Icon(Icons.Default.Send, contentDescription = if (textMode == 1) t("send_text") else t("text_clear"), tint = Color(0xFF67D7FF))
                 }
             }
             Row(
@@ -328,7 +328,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 Text(
                     textStatus ?: voiceStatus ?: if (textInputReady) t("connected") else t("text_waiting"),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9298A3),
+                    color = Color(0xFF8FA6BA),
                     maxLines = 1
                 )
             }
@@ -350,7 +350,7 @@ private fun ReferenceCircleAction(label: String, enabled: Boolean, modifier: Mod
         enabled = enabled,
         modifier = modifier.aspectRatio(1f),
         shape = androidx.compose.foundation.shape.CircleShape,
-        color = Color(0xFF353535),
+        color = Color(0xFF172638),
         contentColor = Color.White
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -379,7 +379,7 @@ private fun MediaControlAction(
             enabled = enabled,
             modifier = Modifier.size(buttonSize),
             shape = androidx.compose.foundation.shape.CircleShape,
-            color = if (emphasized) Color(0xFF6554B8) else Color(0xFF353535),
+            color = if (emphasized) Color(0xFF176A89) else Color(0xFF172638),
             contentColor = Color.White
         ) {
             Box(contentAlignment = Alignment.Center) {
