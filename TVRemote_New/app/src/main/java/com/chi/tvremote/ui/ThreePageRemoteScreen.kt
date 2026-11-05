@@ -139,10 +139,16 @@ private fun TouchpadPage(vm: RemoteViewModel) {
                         },
                         onDragEnd = {
                             if (ready && (abs(dragX) >= swipeThresholdPx || abs(dragY) >= swipeThresholdPx)) {
+                                // Convert swipe distance into repeated focus steps instead of
+                                // treating every swipe, regardless of length, as one key press.
                                 if (abs(dragX) > abs(dragY)) {
-                                    vm.sendKey(if (dragX > 0) KeyCodes.DPAD_RIGHT else KeyCodes.DPAD_LEFT)
+                                    val key = if (dragX > 0) KeyCodes.DPAD_RIGHT else KeyCodes.DPAD_LEFT
+                                    val steps = (abs(dragX) / swipeThresholdPx).toInt().coerceIn(1, 8)
+                                    repeat(steps) { vm.sendKey(key) }
                                 } else {
-                                    vm.sendKey(if (dragY > 0) KeyCodes.DPAD_DOWN else KeyCodes.DPAD_UP)
+                                    val key = if (dragY > 0) KeyCodes.DPAD_DOWN else KeyCodes.DPAD_UP
+                                    val steps = (abs(dragY) / swipeThresholdPx).toInt().coerceIn(1, 8)
+                                    repeat(steps) { vm.sendKey(key) }
                                 }
                             }
                             dragX = 0f
