@@ -266,6 +266,17 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { remote.sendKey(code) }
     }
 
+    /** Sends a bounded sequence of directional focus steps in order for touchpad swipes. */
+    fun sendKeyRepeated(code: Int, count: Int) {
+        val steps = count.coerceIn(1, 8)
+        viewModelScope.launch {
+            repeat(steps) {
+                if (!remote.ready.value) return@launch
+                remote.sendKey(code)
+            }
+        }
+    }
+
     fun sendLongKey(code: Int) {
         viewModelScope.launch { remote.sendLongKey(code) }
     }
