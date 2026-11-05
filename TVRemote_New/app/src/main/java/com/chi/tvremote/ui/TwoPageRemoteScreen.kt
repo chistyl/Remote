@@ -64,7 +64,6 @@ private fun NumberPadPage(vm: RemoteViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Spacer(Modifier.weight(0.15f))
         keys.forEachIndexed { rowIndex, row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { label ->
@@ -92,6 +91,5 @@ private fun NumberPadPage(vm: RemoteViewModel) {
             }
             if (rowIndex != keys.lastIndex) Spacer(Modifier.height(14.dp))
         }
-        Spacer(Modifier.weight(0.45f))
     }
 }
