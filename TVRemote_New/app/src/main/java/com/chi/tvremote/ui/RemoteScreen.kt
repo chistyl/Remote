@@ -114,16 +114,16 @@ fun RemoteScreen(vm: RemoteViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Keep the original VOL/CH rocker layout untouched; compact only surrounding sections.
-        val compact = maxHeight < 700.dp
-        val mediaButton = if (compact) 36.dp else 42.dp
-        val padSize = if (compact) (maxHeight * 0.29f).coerceIn(170.dp, 228.dp) else 250.dp
+        val compact = maxHeight < 760.dp
+        val mediaButton = if (compact) 38.dp else 44.dp
+        val padSize = if (compact) (maxHeight * 0.27f).coerceIn(156.dp, 210.dp) else 236.dp
         Column(
             Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
-                Modifier.fillMaxWidth().height(if (compact) 52.dp else 56.dp),
+                Modifier.fillMaxWidth().height(if (compact) 64.dp else 70.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -135,26 +135,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
 
             Row(
-                Modifier.fillMaxWidth().height(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    if (error != null) error!! else if (ready) {
-                        powerOn?.let { if (it) t("tv_power_on") else t("tv_power_off") } ?: t("connected")
-                    } else if (transportConnected) t("connecting") else t("disconnected"),
-                    color = if (error != null) MaterialTheme.colorScheme.error else Color(0xFF9EA4AE),
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1
-                )
-                volumeInfo?.let { info ->
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (info.muted) t("muted") else "${info.percent}%", color = Color(0xFF9EA4AE), style = MaterialTheme.typography.labelSmall)
-                }
-            }
-
-            Row(
-                Modifier.fillMaxWidth().height(if (compact) 32.dp else 36.dp),
+                Modifier.fillMaxWidth().height(if (compact) 38.dp else 42.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -172,8 +153,12 @@ fun RemoteScreen(vm: RemoteViewModel) {
                     color = if (controlMode == 1) Color(0xFF4B455A) else Color(0xFF25262B),
                     contentColor = Color.White
                 ) { Box(contentAlignment = Alignment.Center) { Text(t("touchpad_mode"), style = MaterialTheme.typography.labelMedium) } }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(t("hold_repeat"), style = MaterialTheme.typography.labelSmall, color = Color(0xFFB8BBC4))
+                Row(
+                    Modifier.weight(1.05f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(t("hold_repeat"), style = MaterialTheme.typography.labelSmall, color = Color(0xFFB8BBC4), maxLines = 1)
                     Switch(checked = repeatEnabled, onCheckedChange = vm::setHoldRepeatEnabled, modifier = Modifier.height(32.dp))
                 }
             }
@@ -196,7 +181,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
 
             Row(
-                Modifier.fillMaxWidth().height(76.dp),
+                Modifier.fillMaxWidth().height(if (compact) 72.dp else 80.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -233,7 +218,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
             }
 
             Row(
-                Modifier.fillMaxWidth().height(if (compact) 36.dp else 40.dp),
+                Modifier.fillMaxWidth().height(if (compact) 52.dp else 56.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -297,7 +282,7 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 }
             }
             Row(
-                Modifier.fillMaxWidth().height(24.dp),
+                Modifier.fillMaxWidth().height(if (compact) 28.dp else 30.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
