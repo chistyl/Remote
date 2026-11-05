@@ -2,6 +2,11 @@ name: TV Remote touchpad build
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'TVRemote_New/**'
+      - '.github/workflows/touchpad-build.yml'
   push:
     branches: [ feature/third-page-touchpad-730b879 ]
     paths:
