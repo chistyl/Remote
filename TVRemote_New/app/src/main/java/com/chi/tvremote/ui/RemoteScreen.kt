@@ -39,12 +39,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RemoteScreen(vm: RemoteViewModel) {
-    val transportConnected by vm.remote.connected.collectAsState()
     val ready by vm.remote.ready.collectAsState()
     val error by vm.remote.error.collectAsState()
     val textInputReady by vm.remote.textInputReady.collectAsState()
     val volumeInfo by vm.remote.volumeInfo.collectAsState()
-    val powerOn by vm.remote.powerOn.collectAsState()
     val voiceSupported by vm.remote.voiceSupported.collectAsState()
     var textValue by remember { mutableStateOf(TextFieldValue("")) }
     var textMode by remember { mutableIntStateOf(0) } // 0 = live sync, 1 = send whole text
@@ -134,6 +132,21 @@ fun RemoteScreen(vm: RemoteViewModel) {
                 MediaControlAction("⏭", "下一首", ready, Modifier.weight(1f), mediaButton) { vm.sendKey(KeyCodes.MEDIA_NEXT) }
             }
 
+            if (error != null || volumeInfo != null) {
+                Row(
+                    Modifier.fillMaxWidth().height(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    }
+                    volumeInfo?.let { info ->
+                        if (error != null) Spacer(Modifier.width(8.dp))
+                        Text(if (info.muted) t("muted") else "${info.percent}%", color = Color(0xFF9EA4AE), style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
             Row(
                 Modifier.fillMaxWidth().height(if (compact) 38.dp else 42.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
