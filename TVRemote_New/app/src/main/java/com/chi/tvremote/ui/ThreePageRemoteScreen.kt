@@ -153,7 +153,7 @@ private fun TouchpadPage(vm: RemoteViewModel) {
                 .pointerInput(ready) {
                     detectTapGestures(
                         onTap = { if (ready) vm.sendKey(KeyCodes.DPAD_CENTER) },
-                        onDoubleTap = { if (ready) vm.sendKey(KeyCodes.ENTER) },
+                        onDoubleTap = { if (ready) vm.sendKey(KeyCodes.DPAD_CENTER) },
                         onLongPress = { if (ready) vm.sendLongKey(KeyCodes.DPAD_CENTER) }
                     )
                 }
@@ -169,7 +169,7 @@ private fun TouchpadPage(vm: RemoteViewModel) {
                 Spacer(Modifier.height(10.dp))
                 Text("單指滑動控制方向", color = Color(0xFF9296A1), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(5.dp))
-                Text("點一下：OK　雙擊：Enter　長按：持續確認", color = Color(0xFF9296A1), style = MaterialTheme.typography.bodySmall)
+                Text("點一下：確認　雙擊：確認　長按：持續確認", color = Color(0xFF9296A1), style = MaterialTheme.typography.bodySmall)
             }
         }
 
